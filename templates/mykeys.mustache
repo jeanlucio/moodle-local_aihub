@@ -1,0 +1,159 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_aihub/mykeys
+
+    Self-service page where a user manages their personal AI API keys (write-only)
+    and reviews recent usage.
+
+    Context variables required for this template:
+    * heading string Page heading
+    * intro string Introductory paragraph
+    * actionurl string Form action URL
+    * sesskey string Session key
+    * savelabel string Submit button label
+    * removelabel string Remove-checkbox label
+    * replacehint string Hint explaining blank fields keep the current key
+    * showhidelabel string Aria label for the show/hide toggle
+    * advancedlabel string Summary label for the advanced section
+    * providers array List of provider rows (name, label, isset, statuslabel, fieldkey, fieldremove, inputid)
+    * openaiurl string Personal OpenAI-compatible base URL
+    * openaiurllabel string Label for the base URL field
+    * openaiurlplaceholder string Placeholder showing the site base URL
+    * openaimodel string Personal OpenAI-compatible model
+    * openaimodellabel string Label for the model field
+    * openaimodelplaceholder string Placeholder showing the site model
+    * logheading string Heading for the usage history
+    * logempty string Message shown when there is no history
+    * logproviderlabel string Column header for provider
+    * logmodellabel string Column header for model
+    * logdatelabel string Column header for date
+    * loghasrows boolean Whether there is any history
+    * logrows array History rows (provider, providericon, model, date)
+
+    Example context (json):
+    {
+        "heading": "My AI keys",
+        "intro": "Store your own API keys to use AI features.",
+        "actionurl": "https://example.com/local/aihub/mykeys.php",
+        "sesskey": "abc123",
+        "savelabel": "Save",
+        "removelabel": "Remove the saved key",
+        "replacehint": "Leave blank to keep the current key.",
+        "showhidelabel": "Show or hide the key while typing",
+        "advancedlabel": "Advanced OpenAI-compatible settings",
+        "providers": [
+            {"name": "gemini", "label": "Gemini", "isset": true, "statuslabel": "Configured",
+             "fieldkey": "key_gemini", "fieldremove": "remove_gemini", "inputid": "aihub-key-gemini"},
+            {"name": "groq", "label": "Groq", "isset": false, "statuslabel": "Not configured",
+             "fieldkey": "key_groq", "fieldremove": "remove_groq", "inputid": "aihub-key-groq"}
+        ],
+        "openaiurl": "",
+        "openaiurllabel": "OpenAI-compatible base URL",
+        "openaiurlplaceholder": "https://api.openai.com/v1",
+        "openaimodel": "",
+        "openaimodellabel": "OpenAI-compatible model",
+        "openaimodelplaceholder": "gpt-4o-mini",
+        "logheading": "Recent AI usage",
+        "logempty": "No AI requests yet.",
+        "logproviderlabel": "Provider",
+        "logmodellabel": "Model",
+        "logdatelabel": "Date",
+        "loghasrows": true,
+        "logrows": [
+            {"provider": "Gemini", "providericon": "fa-google", "model": "gemini-flash-latest", "date": "1 Jan 2026"}
+        ]
+    }
+}}
+<div class="local-aihub-mykeys">
+    <h2>{{heading}}</h2>
+    <p>{{intro}}</p>
+
+    <form method="post" action="{{actionurl}}">
+        <input type="hidden" name="sesskey" value="{{sesskey}}">
+
+        {{#providers}}
+            <div class="mb-3">
+                <label for="{{inputid}}" class="form-label fw-bold">{{label}}</label>
+                {{#isset}}
+                    <span class="badge bg-success ms-1">{{statuslabel}}</span>
+                {{/isset}}
+                {{^isset}}
+                    <span class="badge bg-light text-dark border ms-1">{{statuslabel}}</span>
+                {{/isset}}
+                <div class="input-group">
+                    <input type="password" class="form-control" id="{{inputid}}" name="{{fieldkey}}"
+                        value="" autocomplete="off" spellcheck="false">
+                    <button type="button" class="btn btn-outline-secondary"
+                        data-action="local-aihub-toggle" data-target="{{inputid}}"
+                        aria-label="{{showhidelabel}}" aria-pressed="false">
+                        <i class="fa fa-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
+                {{#isset}}
+                    <div class="form-check mt-1">
+                        <input type="checkbox" class="form-check-input" id="{{inputid}}-remove"
+                            name="{{fieldremove}}" value="1">
+                        <label class="form-check-label" for="{{inputid}}-remove">{{removelabel}}</label>
+                    </div>
+                {{/isset}}
+            </div>
+        {{/providers}}
+
+        <p class="text-muted small">{{replacehint}}</p>
+
+        <details class="mb-3">
+            <summary>{{advancedlabel}}</summary>
+            <div class="mt-2">
+                <label for="aihub-openai-url" class="form-label">{{openaiurllabel}}</label>
+                <input type="url" class="form-control" id="aihub-openai-url" name="openai_url"
+                    value="{{openaiurl}}" placeholder="{{openaiurlplaceholder}}">
+                <label for="aihub-openai-model" class="form-label mt-2">{{openaimodellabel}}</label>
+                <input type="text" class="form-control" id="aihub-openai-model" name="openai_model"
+                    value="{{openaimodel}}" placeholder="{{openaimodelplaceholder}}">
+            </div>
+        </details>
+
+        <button type="submit" class="btn btn-primary">{{savelabel}}</button>
+    </form>
+
+    <h3 class="mt-4">{{logheading}}</h3>
+    {{#loghasrows}}
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th scope="col">{{logproviderlabel}}</th>
+                    <th scope="col">{{logmodellabel}}</th>
+                    <th scope="col">{{logdatelabel}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#logrows}}
+                    <tr>
+                        <td><i class="fa {{providericon}}" aria-hidden="true"></i> {{provider}}</td>
+                        <td>{{model}}</td>
+                        <td>{{date}}</td>
+                    </tr>
+                {{/logrows}}
+            </tbody>
+        </table>
+    {{/loghasrows}}
+    {{^loghasrows}}
+        <p class="text-muted">{{logempty}}</p>
+    {{/loghasrows}}
+</div>
+
