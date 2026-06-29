@@ -88,6 +88,7 @@ final class keys_test extends \advanced_testcase {
 
         // Toggle off: never allowed, even for an admin.
         $this->setAdminUser();
+        set_config('enablepersonalkeys', 0, 'local_aihub');
         $this->assertFalse(keys::personal_keys_allowed());
 
         // Toggle on plus capability (admin has it): allowed.
