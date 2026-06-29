@@ -15,18 +15,31 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version definition.
+ * Behat step definitions for local_aihub.
  *
  * @package    local_aihub
+ * @category   test
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+require_once(__DIR__ . '/../../../../lib/behat/behat_base.php');
 
-$plugin->component = 'local_aihub';
-$plugin->version   = 2026062901;
-$plugin->requires  = 2024100700;
-$plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.0';
+/**
+ * Steps that drive the self-service AI keys page in acceptance tests.
+ *
+ * @package    local_aihub
+ * @category   test
+ * @copyright  2026 Jean Lúcio
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class behat_local_aihub extends behat_base {
+    /**
+     * Opens the self-service "My AI keys" page.
+     *
+     * @Given I am on the My AI keys page
+     */
+    public function i_am_on_the_my_ai_keys_page(): void {
+        $this->getSession()->visit($this->locate_path('/local/aihub/mykeys.php'));
+    }
+}

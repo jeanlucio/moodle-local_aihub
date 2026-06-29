@@ -15,18 +15,29 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version definition.
+ * Pre-uninstall cleanup for local_aihub.
  *
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+/**
+ * Removes personal AI key preferences from the core user_preferences table.
+ *
+ * The plugin's own table and admin settings are dropped by core; only the
+ * preferences it wrote into a core table need explicit cleanup.
+ *
+ * @return bool
+ */
+function xmldb_local_aihub_uninstall(): bool {
+    global $DB;
 
-$plugin->component = 'local_aihub';
-$plugin->version   = 2026062901;
-$plugin->requires  = 2024100700;
-$plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.0';
+    $DB->delete_records_select(
+        'user_preferences',
+        $DB->sql_like('name', ':pattern'),
+        ['pattern' => 'local_aihub_%']
+    );
+
+    return true;
+}

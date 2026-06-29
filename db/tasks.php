@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version definition.
+ * Scheduled task definitions for local_aihub.
  *
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
@@ -24,9 +24,14 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_aihub';
-$plugin->version   = 2026062901;
-$plugin->requires  = 2024100700;
-$plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.0';
+$tasks = [
+    [
+        'classname' => 'local_aihub\task\purge_old_logs',
+        'blocking'  => 0,
+        'minute'    => 'R',
+        'hour'      => 'R',
+        'day'       => '*',
+        'dayofweek' => '*',
+        'month'     => '*',
+    ],
+];

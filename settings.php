@@ -77,4 +77,12 @@ if ($hassiteconfig) {
         'gpt-4o-mini',
         PARAM_TEXT
     ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_aihub/logretentiondays',
+        get_string('settings_logretentiondays', 'local_aihub'),
+        get_string('settings_logretentiondays_desc', 'local_aihub'),
+        365,
+        PARAM_INT
+    ));
 }
