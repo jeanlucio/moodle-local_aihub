@@ -28,5 +28,5 @@ $plugin->component = 'local_aihub';
 $plugin->version   = 2026062904;
 $plugin->requires  = 2024100700;
 $plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.0';
+$plugin->maturity  = MATURITY_STABLE;
+$plugin->release   = 'v1.0.0';

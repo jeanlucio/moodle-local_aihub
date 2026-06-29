@@ -20,12 +20,18 @@ the transport, the SSRF guard or a key store.
   already has `core_ai` configured needs no extra setup.
 - Personal keys are **write-only**: once saved, a key is never shown again — the page only
   reports a *configured / not configured* status.
+- Ships a self-service **My AI keys** page (in the user's preferences) to manage personal
+  keys and review one's own recent usage.
+- Gives administrators a **site-keys usage report** — every request served by the site keys,
+  across all users — with **CSV / Excel** download (capability `local/aihub:viewusage`).
 
 ### 🔧 For developers (consuming the hub)
 
 ```php
 if (class_exists(\local_aihub\ai::class) && \local_aihub\ai::is_available()) {
-    $result = \local_aihub\ai::generate_text('', $prompt, false, 'your_frankenstyle');
+    // 4th arg: your frankenstyle (for the usage log). 5th arg: a short label of what you
+    // are generating, shown in the admin report (e.g. "Concept cartridge - Algebra").
+    $result = \local_aihub\ai::generate_text('', $prompt, false, 'your_frankenstyle', 'Short label');
     if ($result['success']) {
         // $result['data'] is RAW, untrusted text — validate and format_text() it.
     }
@@ -73,6 +79,11 @@ cada plugin reimplemente o transporte, o guard de SSRF ou um armazenamento de ch
   então um site que já tem `core_ai` configurado não precisa de nada extra.
 - As chaves pessoais são **write-only**: uma vez salva, a chave nunca é exibida de novo —
   a página mostra apenas o status *configurada / não configurada*.
+- Traz uma página self-service **Minhas chaves de IA** (nas preferências do usuário) para
+  gerenciar as chaves pessoais e revisar o próprio uso recente.
+- Oferece ao administrador um **relatório de uso das chaves do site** — todas as requisições
+  atendidas pelas chaves do site, de todos os usuários — com download **CSV / Excel**
+  (capability `local/aihub:viewusage`).
 
 ### 🔒 Divulgação de serviços de terceiros / transmissão de dados
 
