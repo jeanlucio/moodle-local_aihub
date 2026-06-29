@@ -18,4 +18,4 @@ Feature: Manage personal AI keys
     And I press "Save"
     Then I should see "Your AI key settings were saved."
     And I should see "Configured"
-    And the "value" attribute of "#aihub-key-gemini" "css_element" should not contain "secret-gemini-key"
+    And the field "key_gemini" matches value ""
