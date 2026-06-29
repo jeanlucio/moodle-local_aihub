@@ -218,7 +218,7 @@ This project is licensed under the **GNU General Public License v3 (GPLv3)**.
 
 ## Português
 
-A **Central de IA** é um pequeno corretor **BYOK (traga sua própria chave)** para o Moodle. Ela permite que os plugins da própria instituição gerem texto através de chaves de API de IA compartilhadas, sem que cada plugin reimplemente o transporte HTTP, o guard de SSRF, a escada de provedores ou um armazenamento de chaves.
+A **Central de IA** é um pequeno intermediário **BYOK (traga sua própria chave)** para o Moodle. Ela permite que os plugins da própria instituição gerem texto através de chaves de API de IA compartilhadas, sem que cada plugin reimplemente o transporte HTTP, o guard de SSRF, a escada de provedores ou um armazenamento de chaves.
 
 É um **plugin de serviço para desenvolvedores**: expõe uma fachada PHP de uma chamada que qualquer plugin irmão consome com um guard `class_exists()`. Também dá ao administrador um lugar para guardar chaves de site, permite que o usuário traga sua chave pessoal (opt-in) e relata como as chaves do site estão sendo usadas.
 
