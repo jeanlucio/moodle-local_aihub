@@ -9,6 +9,7 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="component" TYPE="char" LENGTH="100" NOTNULL="true"/>
+        <FIELD NAME="description" TYPE="char" LENGTH="255" NOTNULL="false"/>
         <FIELD NAME="provider" TYPE="char" LENGTH="40" NOTNULL="true"/>
         <FIELD NAME="model" TYPE="char" LENGTH="100" NOTNULL="false"/>
         <FIELD NAME="success" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>

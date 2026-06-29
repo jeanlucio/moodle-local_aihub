@@ -25,12 +25,16 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['aihub:usepersonalkey'] = 'Use a personal AI API key';
+$string['download_csv'] = 'Download CSV';
+$string['download_excel'] = 'Download Excel';
 $string['enablepersonalkeys'] = 'Enable personal API keys';
 $string['enablepersonalkeys_desc'] = 'Allow users with the capability to store their own AI API keys.';
 $string['mykeys'] = 'My AI keys';
 $string['mykeys_advanced'] = 'Advanced OpenAI-compatible settings';
 $string['mykeys_intro'] = 'Store your own API keys to use AI features with your personal quota. For security, a saved key is never shown again — leave a field blank to keep the current key.';
 $string['mykeys_keyssaved'] = 'Your AI key settings were saved.';
+$string['mykeys_log_action'] = 'What was done';
+$string['mykeys_log_component'] = 'Requested by';
 $string['mykeys_log_date'] = 'Date';
 $string['mykeys_log_empty'] = 'No AI requests yet.';
 $string['mykeys_log_heading'] = 'Recent AI usage';
@@ -50,6 +54,7 @@ $string['privacy:metadata:external:openai'] = 'When an OpenAI-compatible key res
 $string['privacy:metadata:external:prompt'] = 'The prompt text submitted for generation.';
 $string['privacy:metadata:logtable'] = 'A log of AI generation requests made by the user.';
 $string['privacy:metadata:logtable:component'] = 'The plugin that requested the generation.';
+$string['privacy:metadata:logtable:description'] = 'A short label of what was generated.';
 $string['privacy:metadata:logtable:model'] = 'The model used for the generation.';
 $string['privacy:metadata:logtable:provider'] = 'The provider that served the generation.';
 $string['privacy:metadata:logtable:timecreated'] = 'The time the request was made.';

@@ -53,6 +53,7 @@ class ai {
      * @param string $user User prompt text.
      * @param bool $jsonmode Whether to request structured JSON output.
      * @param string $component Frankenstyle of the calling plugin, for the usage log.
+     * @param string $description Short label of what is being generated, for the usage log.
      * @param int|null $userid User whose personal keys are tried first. Defaults to $USER->id.
      * @return array Keys: success (bool), data (string), provider (string), model (string), message (string).
      */
@@ -61,6 +62,7 @@ class ai {
         string $user,
         bool $jsonmode = false,
         string $component = '',
+        string $description = '',
         ?int $userid = null
     ): array {
         global $USER;
@@ -73,6 +75,7 @@ class ai {
             usage_log::record(
                 $userid,
                 $component,
+                $description,
                 (string) ($result['provider'] ?? ''),
                 (string) ($result['model'] ?? ''),
                 true

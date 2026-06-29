@@ -40,6 +40,7 @@ class usage_log {
      *
      * @param int $userid The user who requested the generation.
      * @param string $component Frankenstyle of the calling plugin (may be empty).
+     * @param string $description Short label of what was generated (may be empty).
      * @param string $provider Provider display name (Gemini, Groq, OpenAI).
      * @param string $model Model identifier used (may be empty).
      * @param bool $success Whether the generation succeeded.
@@ -48,6 +49,7 @@ class usage_log {
     public static function record(
         int $userid,
         string $component,
+        string $description,
         string $provider,
         string $model,
         bool $success
@@ -57,6 +59,7 @@ class usage_log {
         $record = new \stdClass();
         $record->userid = $userid;
         $record->component = $component;
+        $record->description = $description !== '' ? $description : null;
         $record->provider = $provider;
         $record->model = $model !== '' ? $model : null;
         $record->success = $success ? 1 : 0;
@@ -79,9 +82,26 @@ class usage_log {
             self::TABLE,
             ['userid' => $userid],
             'timecreated DESC',
-            'id, component, provider, model, success, timecreated',
+            'id, component, description, provider, model, success, timecreated',
             0,
             $limit
+        );
+    }
+
+    /**
+     * Returns all log entries for a user, newest first (for export).
+     *
+     * @param int $userid The user whose entries are fetched.
+     * @return array Array of record objects.
+     */
+    public static function get_all_for_user(int $userid): array {
+        global $DB;
+
+        return $DB->get_records(
+            self::TABLE,
+            ['userid' => $userid],
+            'timecreated DESC',
+            'id, component, description, provider, model, success, timecreated'
         );
     }
 }

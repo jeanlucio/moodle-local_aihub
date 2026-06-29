@@ -44,11 +44,12 @@ final class usage_log_test extends \advanced_testcase {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();
 
-        $id = usage_log::record((int) $user->id, 'local_playergames', 'Gemini', '', true);
+        $id = usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', '', true);
 
         $row = $DB->get_record(usage_log::TABLE, ['id' => $id], '*', MUST_EXIST);
         $this->assertSame((int) $user->id, (int) $row->userid);
         $this->assertSame('local_playergames', $row->component);
+        $this->assertSame('Concepts: test', $row->description);
         $this->assertSame('Gemini', $row->provider);
         $this->assertNull($row->model);
         $this->assertSame(1, (int) $row->success);
@@ -65,9 +66,9 @@ final class usage_log_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $other = $this->getDataGenerator()->create_user();
 
-        usage_log::record((int) $user->id, 'local_aiassess', 'Groq', 'llama', true);
-        usage_log::record((int) $user->id, 'report_unlocker', 'OpenAI', 'gpt-4o-mini', false);
-        usage_log::record((int) $other->id, 'local_aiassess', 'Gemini', 'flash', true);
+        usage_log::record((int) $user->id, 'local_aiassess', 'Forum review', 'Groq', 'llama', true);
+        usage_log::record((int) $user->id, 'report_unlocker', 'Restriction help', 'OpenAI', 'gpt-4o-mini', false);
+        usage_log::record((int) $other->id, 'local_aiassess', 'Forum review', 'Gemini', 'flash', true);
 
         // Only this user's two rows come back; the other user's row is excluded.
         $rows = usage_log::get_recent_for_user((int) $user->id);

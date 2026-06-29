@@ -61,7 +61,7 @@ final class privacy_provider_test extends \advanced_testcase {
     public function test_contexts_and_users(): void {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();
-        usage_log::record((int) $user->id, 'local_playergames', 'Gemini', 'flash', true);
+        usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', 'flash', true);
 
         $contextlist = provider::get_contexts_for_userid((int) $user->id);
         $contexts = $contextlist->get_contexts();
@@ -83,7 +83,7 @@ final class privacy_provider_test extends \advanced_testcase {
     public function test_export(): void {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();
-        usage_log::record((int) $user->id, 'local_playergames', 'Gemini', 'flash', true);
+        usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', 'flash', true);
         keys::save_user_key(keys::PROVIDER_GEMINI, 'supersecretkey', (int) $user->id);
         keys::save_user_openai_model('gpt-4o', (int) $user->id);
 
@@ -98,6 +98,7 @@ final class privacy_provider_test extends \advanced_testcase {
         $data = $writer->get_data([get_string('mykeys_log_heading', 'local_aihub')]);
         $this->assertCount(1, $data->logs);
         $this->assertSame('local_playergames', $data->logs[0]['component']);
+        $this->assertSame('Concepts: test', $data->logs[0]['description']);
 
         $prefs = $writer->get_user_preferences('local_aihub');
         // The key value must be redacted, never exported in clear.
@@ -118,8 +119,8 @@ final class privacy_provider_test extends \advanced_testcase {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();
         $other = $this->getDataGenerator()->create_user();
-        usage_log::record((int) $user->id, 'local_playergames', 'Gemini', 'flash', true);
-        usage_log::record((int) $other->id, 'local_aiassess', 'Groq', 'llama', true);
+        usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', 'flash', true);
+        usage_log::record((int) $other->id, 'local_aiassess', 'Forum review', 'Groq', 'llama', true);
 
         $context = context_user::instance($user->id);
         $approved = new approved_contextlist($user, 'local_aihub', [$context->id]);

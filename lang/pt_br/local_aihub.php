@@ -25,12 +25,16 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['aihub:usepersonalkey'] = 'Usar uma chave de API de IA pessoal';
+$string['download_csv'] = 'Baixar CSV';
+$string['download_excel'] = 'Baixar Excel';
 $string['enablepersonalkeys'] = 'Habilitar chaves de API pessoais';
 $string['enablepersonalkeys_desc'] = 'Permite que usuários com a capacidade guardem suas próprias chaves de API de IA.';
 $string['mykeys'] = 'Minhas chaves de IA';
 $string['mykeys_advanced'] = 'Configurações avançadas compatíveis com OpenAI';
 $string['mykeys_intro'] = 'Guarde suas próprias chaves de API para usar recursos de IA com sua cota pessoal. Por segurança, uma chave salva nunca é exibida novamente — deixe um campo em branco para manter a chave atual.';
 $string['mykeys_keyssaved'] = 'Suas configurações de chave de IA foram salvas.';
+$string['mykeys_log_action'] = 'O que foi feito';
+$string['mykeys_log_component'] = 'Solicitado por';
 $string['mykeys_log_date'] = 'Data';
 $string['mykeys_log_empty'] = 'Nenhuma requisição de IA ainda.';
 $string['mykeys_log_heading'] = 'Uso recente de IA';
@@ -50,6 +54,7 @@ $string['privacy:metadata:external:openai'] = 'Quando uma chave compatível com 
 $string['privacy:metadata:external:prompt'] = 'O texto do prompt enviado para geração.';
 $string['privacy:metadata:logtable'] = 'Um registro das requisições de geração de IA feitas pelo usuário.';
 $string['privacy:metadata:logtable:component'] = 'O plugin que solicitou a geração.';
+$string['privacy:metadata:logtable:description'] = 'Um rótulo curto do que foi gerado.';
 $string['privacy:metadata:logtable:model'] = 'O modelo usado na geração.';
 $string['privacy:metadata:logtable:provider'] = 'O provedor que atendeu a geração.';
 $string['privacy:metadata:logtable:timecreated'] = 'O momento em que a requisição foi feita.';

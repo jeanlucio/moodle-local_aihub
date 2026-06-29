@@ -61,6 +61,7 @@ class provider implements
         $collection->add_database_table('local_aihub_log', [
             'userid'      => 'privacy:metadata:logtable:userid',
             'component'   => 'privacy:metadata:logtable:component',
+            'description' => 'privacy:metadata:logtable:description',
             'provider'    => 'privacy:metadata:logtable:provider',
             'model'       => 'privacy:metadata:logtable:model',
             'timecreated' => 'privacy:metadata:logtable:timecreated',
@@ -149,6 +150,7 @@ class provider implements
             foreach ($records as $record) {
                 $rows[] = [
                     'component'   => $record->component,
+                    'description' => $record->description,
                     'provider'    => $record->provider,
                     'model'       => $record->model,
                     'timecreated' => \core_privacy\local\request\transform::datetime($record->timecreated),

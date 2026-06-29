@@ -85,7 +85,7 @@ final class ai_test extends \advanced_testcase {
         ];
         ai::set_client_for_testing($client);
 
-        $result = ai::generate_text('', 'hello', true, 'local_playergames');
+        $result = ai::generate_text('', 'hello', true, 'local_playergames', 'Concepts: test');
 
         $this->assertTrue($result['success']);
         $this->assertSame('{"ok":true}', $result['data']);
@@ -94,6 +94,7 @@ final class ai_test extends \advanced_testcase {
         $this->assertCount(1, $rows);
         $row = reset($rows);
         $this->assertSame('local_playergames', $row->component);
+        $this->assertSame('Concepts: test', $row->description);
         $this->assertSame('Gemini', $row->provider);
         $this->assertSame(1, (int) $row->success);
     }

@@ -88,11 +88,22 @@ class mykeys implements renderable, templatable {
             'openaimodelplaceholder' => keys::get_openai_model(),
             'logheading'           => get_string('mykeys_log_heading', 'local_aihub'),
             'logempty'             => get_string('mykeys_log_empty', 'local_aihub'),
+            'logactionlabel'       => get_string('mykeys_log_action', 'local_aihub'),
             'logproviderlabel'     => get_string('mykeys_log_provider', 'local_aihub'),
             'logmodellabel'        => get_string('mykeys_log_model', 'local_aihub'),
             'logdatelabel'         => get_string('mykeys_log_date', 'local_aihub'),
             'logrows'              => $logrows,
             'loghasrows'           => !empty($logrows),
+            'downloadcsvurl'       => (new moodle_url(
+                '/local/aihub/mykeys.php',
+                ['download' => 'csv']
+            ))->out(false),
+            'downloadexcelurl'     => (new moodle_url(
+                '/local/aihub/mykeys.php',
+                ['download' => 'excel']
+            ))->out(false),
+            'downloadcsvlabel'     => get_string('download_csv', 'local_aihub'),
+            'downloadexcellabel'   => get_string('download_excel', 'local_aihub'),
         ];
     }
 
@@ -136,6 +147,7 @@ class mykeys implements renderable, templatable {
         $rows = [];
         foreach ($records as $record) {
             $rows[] = [
+                'description'  => (string) ($record->description ?? ''),
                 'provider'     => $record->provider,
                 'providericon' => self::PROVIDER_ICONS[$record->provider] ?? 'fa-cog',
                 'model'        => (string) ($record->model ?? ''),

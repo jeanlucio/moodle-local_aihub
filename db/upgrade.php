@@ -15,18 +15,33 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version definition.
+ * Upgrade steps for local_aihub.
  *
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+/**
+ * Runs upgrade steps between plugin versions.
+ *
+ * @param int $oldversion Previous installed version.
+ * @return bool
+ */
+function xmldb_local_aihub_upgrade(int $oldversion): bool {
+    global $DB;
+    $dbman = $DB->get_manager();
 
-$plugin->component = 'local_aihub';
-$plugin->version   = 2026062903;
-$plugin->requires  = 2024100700;
-$plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.0';
+    if ($oldversion < 2026062903) {
+        // Add a free-text description of what the consumer generated.
+        $table = new xmldb_table('local_aihub_log');
+        $field = new xmldb_field('description', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'component');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_plugin_savepoint(true, 2026062903, 'local', 'aihub');
+    }
+
+    return true;
+}

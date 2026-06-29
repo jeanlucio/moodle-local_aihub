@@ -24,6 +24,7 @@
 
 require(__DIR__ . '/../../config.php');
 
+use local_aihub\local\export;
 use local_aihub\local\keys;
 use local_aihub\output\mykeys;
 
@@ -34,6 +35,12 @@ $userid = (int) $USER->id;
 
 if (!keys::personal_keys_allowed($userid)) {
     throw new moodle_exception('mykeys_notallowed', 'local_aihub');
+}
+
+// Stream the usage log download before any page output is sent.
+$download = optional_param('download', '', PARAM_ALPHA);
+if ($download !== '' && in_array($download, export::FORMATS, true)) {
+    export::download($userid, $download);
 }
 
 $url = new moodle_url('/local/aihub/mykeys.php');

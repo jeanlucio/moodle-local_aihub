@@ -38,11 +38,16 @@
     * openaimodelplaceholder string Placeholder showing the site model
     * logheading string Heading for the usage history
     * logempty string Message shown when there is no history
+    * logactionlabel string Column header for what was done
     * logproviderlabel string Column header for provider
     * logmodellabel string Column header for model
     * logdatelabel string Column header for date
     * loghasrows boolean Whether there is any history
-    * logrows array History rows (provider, providericon, model, date)
+    * logrows array History rows (description, provider, providericon, model, date)
+    * downloadcsvurl string URL to download the full usage log as CSV
+    * downloadexcelurl string URL to download the full usage log as Excel
+    * downloadcsvlabel string Label for the CSV download button
+    * downloadexcellabel string Label for the Excel download button
 
     Example context (json):
     {
@@ -71,10 +76,15 @@
         "logproviderlabel": "Provider",
         "logmodellabel": "Model",
         "logdatelabel": "Date",
+        "logactionlabel": "What was done",
         "loghasrows": true,
         "logrows": [
-            {"provider": "Gemini", "providericon": "fa-google", "model": "gemini-flash-latest", "date": "1 Jan 2026"}
-        ]
+            {"description": "Concepts: History of Brazil", "provider": "Gemini", "providericon": "fa-google", "model": "gemini-flash-latest", "date": "1 Jan 2026"}
+        ],
+        "downloadcsvurl": "https://example.com/local/aihub/mykeys.php?download=csv",
+        "downloadexcelurl": "https://example.com/local/aihub/mykeys.php?download=excel",
+        "downloadcsvlabel": "Download CSV",
+        "downloadexcellabel": "Download Excel"
     }
 }}
 <div class="local-aihub-mykeys">
@@ -133,6 +143,7 @@
         <table class="table table-sm">
             <thead>
                 <tr>
+                    <th scope="col">{{logactionlabel}}</th>
                     <th scope="col">{{logproviderlabel}}</th>
                     <th scope="col">{{logmodellabel}}</th>
                     <th scope="col">{{logdatelabel}}</th>
@@ -141,6 +152,7 @@
             <tbody>
                 {{#logrows}}
                     <tr>
+                        <td>{{description}}</td>
                         <td><i class="fa {{providericon}}" aria-hidden="true"></i> {{provider}}</td>
                         <td>{{model}}</td>
                         <td>{{date}}</td>
@@ -148,6 +160,14 @@
                 {{/logrows}}
             </tbody>
         </table>
+        <div class="d-flex">
+            <a href="{{downloadcsvurl}}" class="btn btn-outline-secondary btn-sm me-2">
+                <i class="fa fa-download" aria-hidden="true"></i> {{downloadcsvlabel}}
+            </a>
+            <a href="{{downloadexcelurl}}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa fa-download" aria-hidden="true"></i> {{downloadexcellabel}}
+            </a>
+        </div>
     {{/loghasrows}}
     {{^loghasrows}}
         <p class="text-muted">{{logempty}}</p>
