@@ -29,7 +29,6 @@ $string['enablepersonalkeys'] = 'Habilitar chaves de API pessoais';
 $string['enablepersonalkeys_desc'] = 'Permite que usuários com a capacidade guardem suas próprias chaves de API de IA.';
 $string['mykeys'] = 'Minhas chaves de IA';
 $string['mykeys_advanced'] = 'Configurações avançadas compatíveis com OpenAI';
-$string['mykeys_heading'] = 'Minhas chaves de IA';
 $string['mykeys_intro'] = 'Guarde suas próprias chaves de API para usar recursos de IA com sua cota pessoal. Por segurança, uma chave salva nunca é exibida novamente — deixe um campo em branco para manter a chave atual.';
 $string['mykeys_keyssaved'] = 'Suas configurações de chave de IA foram salvas.';
 $string['mykeys_log_date'] = 'Data';

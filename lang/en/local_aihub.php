@@ -29,7 +29,6 @@ $string['enablepersonalkeys'] = 'Enable personal API keys';
 $string['enablepersonalkeys_desc'] = 'Allow users with the capability to store their own AI API keys.';
 $string['mykeys'] = 'My AI keys';
 $string['mykeys_advanced'] = 'Advanced OpenAI-compatible settings';
-$string['mykeys_heading'] = 'My AI keys';
 $string['mykeys_intro'] = 'Store your own API keys to use AI features with your personal quota. For security, a saved key is never shown again — leave a field blank to keep the current key.';
 $string['mykeys_keyssaved'] = 'Your AI key settings were saved.';
 $string['mykeys_log_date'] = 'Date';

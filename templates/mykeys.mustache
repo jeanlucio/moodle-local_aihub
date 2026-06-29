@@ -21,7 +21,6 @@
     and reviews recent usage.
 
     Context variables required for this template:
-    * heading string Page heading
     * intro string Introductory paragraph
     * actionurl string Form action URL
     * sesskey string Session key
@@ -47,7 +46,6 @@
 
     Example context (json):
     {
-        "heading": "My AI keys",
         "intro": "Store your own API keys to use AI features.",
         "actionurl": "https://example.com/local/aihub/mykeys.php",
         "sesskey": "abc123",
@@ -80,7 +78,6 @@
     }
 }}
 <div class="local-aihub-mykeys">
-    <h2>{{heading}}</h2>
     <p>{{intro}}</p>
 
     <form method="post" action="{{actionurl}}">

@@ -71,7 +71,6 @@ class mykeys implements renderable, templatable {
     public function export_for_template(renderer_base $output): array {
         $logrows = $this->log_rows();
         return [
-            'heading'              => get_string('mykeys_heading', 'local_aihub'),
             'intro'                => get_string('mykeys_intro', 'local_aihub'),
             'actionurl'            => (new moodle_url('/local/aihub/mykeys.php'))->out(false),
             'sesskey'              => sesskey(),
