@@ -1,0 +1,100 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_aihub/report
+
+    Admin report listing AI generation requests served by the site-wide keys,
+    across all users, with CSV/Excel download.
+
+    Context variables required for this template:
+    * intro string Introductory paragraph
+    * empty string Message shown when there is no usage
+    * userlabel string Column header for the user
+    * componentlabel string Column header for the requesting component
+    * actionlabel string Column header for what was done
+    * providerlabel string Column header for provider
+    * modellabel string Column header for model
+    * datelabel string Column header for date
+    * hasrows boolean Whether there is any usage
+    * rows array Usage rows (user, component, description, provider, providericon, model, date)
+    * downloadcsvurl string URL to download the report as CSV
+    * downloadexcelurl string URL to download the report as Excel
+    * downloadcsvlabel string Label for the CSV download button
+    * downloadexcellabel string Label for the Excel download button
+
+    Example context (json):
+    {
+        "intro": "AI generation requests served by the site-wide API keys.",
+        "empty": "No AI requests have used the site keys yet.",
+        "userlabel": "User",
+        "componentlabel": "Requested by",
+        "actionlabel": "What was done",
+        "providerlabel": "Provider",
+        "modellabel": "Model",
+        "datelabel": "Date",
+        "hasrows": true,
+        "rows": [
+            {"user": "Ada Lovelace", "component": "local_playergames", "description": "Concepts: History of Brazil",
+             "provider": "Gemini", "providericon": "fa-google", "model": "gemini-flash-latest", "date": "1 Jan 2026"}
+        ],
+        "downloadcsvurl": "https://example.com/local/aihub/report.php?download=csv",
+        "downloadexcelurl": "https://example.com/local/aihub/report.php?download=excel",
+        "downloadcsvlabel": "Download CSV",
+        "downloadexcellabel": "Download Excel"
+    }
+}}
+<div class="local-aihub-report">
+    <p>{{intro}}</p>
+
+    {{#hasrows}}
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th scope="col">{{userlabel}}</th>
+                    <th scope="col">{{componentlabel}}</th>
+                    <th scope="col">{{actionlabel}}</th>
+                    <th scope="col">{{providerlabel}}</th>
+                    <th scope="col">{{modellabel}}</th>
+                    <th scope="col">{{datelabel}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#rows}}
+                    <tr>
+                        <td>{{user}}</td>
+                        <td>{{component}}</td>
+                        <td>{{description}}</td>
+                        <td><i class="fa {{providericon}}" aria-hidden="true"></i> {{provider}}</td>
+                        <td>{{model}}</td>
+                        <td>{{date}}</td>
+                    </tr>
+                {{/rows}}
+            </tbody>
+        </table>
+        <div class="d-flex">
+            <a href="{{downloadcsvurl}}" class="btn btn-outline-secondary btn-sm me-2">
+                <i class="fa fa-download" aria-hidden="true"></i> {{downloadcsvlabel}}
+            </a>
+            <a href="{{downloadexcelurl}}" class="btn btn-outline-secondary btn-sm">
+                <i class="fa fa-download" aria-hidden="true"></i> {{downloadexcellabel}}
+            </a>
+        </div>
+    {{/hasrows}}
+    {{^hasrows}}
+        <p class="text-muted">{{empty}}</p>
+    {{/hasrows}}
+</div>

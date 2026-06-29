@@ -59,4 +59,32 @@ final class export_test extends \advanced_testcase {
         $this->assertSame('Concepts: test', $rows[0][1]);
         $this->assertSame('Gemini', $rows[0][2]);
     }
+
+    /**
+     * The site export covers every site-key row across users, with the user column.
+     *
+     * @covers ::build_site
+     * @return void
+     */
+    public function test_build_site(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $other = $this->getDataGenerator()->create_user();
+
+        usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', 'flash', true, 'site');
+        usage_log::record((int) $other->id, 'local_aiassess', 'Forum review', 'Groq', 'llama', true, 'site');
+        // Personal-key usage is not part of the site report.
+        usage_log::record((int) $user->id, 'report_unlocker', 'Restriction help', 'OpenAI', 'gpt', true, 'personal');
+
+        [$columns, $rows] = export::build_site();
+
+        // Six columns (user first) and only the two site-key rows.
+        $this->assertCount(6, $columns);
+        $this->assertCount(2, $rows);
+        $this->assertCount(6, $rows[0]);
+
+        $names = array_column($rows, 0);
+        $this->assertContains(fullname($user), $names);
+        $this->assertContains(fullname($other), $names);
+    }
 }

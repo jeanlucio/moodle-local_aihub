@@ -24,15 +24,20 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$ADMIN->add('localplugins', new admin_category(
+    'local_aihub_category',
+    get_string('pluginname', 'local_aihub')
+));
+
 if ($hassiteconfig) {
-    $settings = new admin_settingpage('local_aihub', get_string('pluginname', 'local_aihub'));
-    $ADMIN->add('localplugins', $settings);
+    $settings = new admin_settingpage('local_aihub', get_string('settings', 'moodle'));
+    $ADMIN->add('local_aihub_category', $settings);
 
     $settings->add(new admin_setting_configcheckbox(
         'local_aihub/enablepersonalkeys',
         get_string('enablepersonalkeys', 'local_aihub'),
         get_string('enablepersonalkeys_desc', 'local_aihub'),
-        0
+        1
     ));
 
     $settings->add(new admin_setting_heading(
@@ -86,3 +91,10 @@ if ($hassiteconfig) {
         PARAM_INT
     ));
 }
+
+$ADMIN->add('local_aihub_category', new admin_externalpage(
+    'local_aihub_report',
+    get_string('report_title', 'local_aihub'),
+    new moodle_url('/local/aihub/report.php'),
+    'local/aihub:viewusage'
+));

@@ -12,6 +12,7 @@
         <FIELD NAME="description" TYPE="char" LENGTH="255" NOTNULL="false"/>
         <FIELD NAME="provider" TYPE="char" LENGTH="40" NOTNULL="true"/>
         <FIELD NAME="model" TYPE="char" LENGTH="100" NOTNULL="false"/>
+        <FIELD NAME="keysource" TYPE="char" LENGTH="20" NOTNULL="false" COMMENT="Which key tier served the request: personal or site"/>
         <FIELD NAME="success" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
       </FIELDS>
@@ -21,6 +22,7 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="idx_component" UNIQUE="false" FIELDS="component"/>
+        <INDEX NAME="idx_keysource" UNIQUE="false" FIELDS="keysource"/>
         <INDEX NAME="idx_timecreated" UNIQUE="false" FIELDS="timecreated"/>
       </INDEXES>
     </TABLE>

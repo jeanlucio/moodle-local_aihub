@@ -96,6 +96,7 @@ final class ai_test extends \advanced_testcase {
         $this->assertSame('local_playergames', $row->component);
         $this->assertSame('Concepts: test', $row->description);
         $this->assertSame('Gemini', $row->provider);
+        $this->assertSame('site', $row->keysource);
         $this->assertSame(1, (int) $row->success);
     }
 

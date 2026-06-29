@@ -78,4 +78,53 @@ class export {
         \core\dataformat::download_data($filename, $format, $columns, $rows);
         die();
     }
+
+    /**
+     * Builds the localized columns and rows for the site-keys usage report.
+     *
+     * Covers every request served by the site keys, across all users.
+     *
+     * @return array A two-element list with the columns and the data rows.
+     */
+    public static function build_site(): array {
+        $columns = [
+            get_string('report_user', 'local_aihub'),
+            get_string('mykeys_log_component', 'local_aihub'),
+            get_string('mykeys_log_action', 'local_aihub'),
+            get_string('mykeys_log_provider', 'local_aihub'),
+            get_string('mykeys_log_model', 'local_aihub'),
+            get_string('mykeys_log_date', 'local_aihub'),
+        ];
+
+        $records = usage_log::get_all_site();
+        $names = usage_log::user_fullnames($records);
+        $datetimeformat = get_string('strftimedatetime', 'core_langconfig');
+
+        $rows = [];
+        foreach ($records as $record) {
+            $rows[] = [
+                $names[(int) $record->userid] ?? (string) $record->userid,
+                $record->component,
+                (string) ($record->description ?? ''),
+                $record->provider,
+                (string) ($record->model ?? ''),
+                userdate($record->timecreated, $datetimeformat),
+            ];
+        }
+
+        return [$columns, $rows];
+    }
+
+    /**
+     * Streams the complete site-keys usage report as a downloadable file and exits.
+     *
+     * @param string $format A dataformat identifier from {@see self::FORMATS}.
+     * @return void
+     */
+    public static function download_site(string $format): void {
+        [$columns, $rows] = self::build_site();
+        $filename = 'aihub_site_usage_' . date('Ymd');
+        \core\dataformat::download_data($filename, $format, $columns, $rows);
+        die();
+    }
 }

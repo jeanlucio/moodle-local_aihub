@@ -25,6 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['aihub:usepersonalkey'] = 'Use a personal AI API key';
+$string['aihub:viewusage'] = 'View site AI usage';
 $string['download_csv'] = 'Download CSV';
 $string['download_excel'] = 'Download Excel';
 $string['enablepersonalkeys'] = 'Enable personal API keys';
@@ -55,6 +56,7 @@ $string['privacy:metadata:external:prompt'] = 'The prompt text submitted for gen
 $string['privacy:metadata:logtable'] = 'A log of AI generation requests made by the user.';
 $string['privacy:metadata:logtable:component'] = 'The plugin that requested the generation.';
 $string['privacy:metadata:logtable:description'] = 'A short label of what was generated.';
+$string['privacy:metadata:logtable:keysource'] = 'Whether the request used a personal or a site API key.';
 $string['privacy:metadata:logtable:model'] = 'The model used for the generation.';
 $string['privacy:metadata:logtable:provider'] = 'The provider that served the generation.';
 $string['privacy:metadata:logtable:timecreated'] = 'The time the request was made.';
@@ -68,6 +70,10 @@ $string['privacy:redacted'] = 'A personal API key is stored (its value is hidden
 $string['provider_gemini'] = 'Gemini';
 $string['provider_groq'] = 'Groq';
 $string['provider_openai'] = 'OpenAI-compatible';
+$string['report_empty'] = 'No AI requests have used the site keys yet.';
+$string['report_intro'] = 'AI generation requests served by the site-wide API keys, across all users.';
+$string['report_title'] = 'Site AI usage report';
+$string['report_user'] = 'User';
 $string['settings_gemini_key'] = 'Gemini API key';
 $string['settings_gemini_key_desc'] = 'Site-wide API key for Google Gemini. Used when a user has no personal key.';
 $string['settings_groq_key'] = 'Groq API key';

@@ -55,7 +55,7 @@ class ai {
      * @param string $component Frankenstyle of the calling plugin, for the usage log.
      * @param string $description Short label of what is being generated, for the usage log.
      * @param int|null $userid User whose personal keys are tried first. Defaults to $USER->id.
-     * @return array Keys: success (bool), data (string), provider (string), model (string), message (string).
+     * @return array Keys: success (bool), data (string), provider (string), model (string), keysource (string), message (string).
      */
     public static function generate_text(
         string $system,
@@ -78,7 +78,8 @@ class ai {
                 $description,
                 (string) ($result['provider'] ?? ''),
                 (string) ($result['model'] ?? ''),
-                true
+                true,
+                (string) ($result['keysource'] ?? '')
             );
         }
 

@@ -25,6 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['aihub:usepersonalkey'] = 'Usar uma chave de API de IA pessoal';
+$string['aihub:viewusage'] = 'Ver o uso de IA do site';
 $string['download_csv'] = 'Baixar CSV';
 $string['download_excel'] = 'Baixar Excel';
 $string['enablepersonalkeys'] = 'Habilitar chaves de API pessoais';
@@ -55,6 +56,7 @@ $string['privacy:metadata:external:prompt'] = 'O texto do prompt enviado para ge
 $string['privacy:metadata:logtable'] = 'Um registro das requisições de geração de IA feitas pelo usuário.';
 $string['privacy:metadata:logtable:component'] = 'O plugin que solicitou a geração.';
 $string['privacy:metadata:logtable:description'] = 'Um rótulo curto do que foi gerado.';
+$string['privacy:metadata:logtable:keysource'] = 'Se a requisição usou uma chave de API pessoal ou do site.';
 $string['privacy:metadata:logtable:model'] = 'O modelo usado na geração.';
 $string['privacy:metadata:logtable:provider'] = 'O provedor que atendeu a geração.';
 $string['privacy:metadata:logtable:timecreated'] = 'O momento em que a requisição foi feita.';
@@ -68,6 +70,10 @@ $string['privacy:redacted'] = 'Uma chave de API pessoal está armazenada (o valo
 $string['provider_gemini'] = 'Gemini';
 $string['provider_groq'] = 'Groq';
 $string['provider_openai'] = 'Compatível com OpenAI';
+$string['report_empty'] = 'Nenhuma requisição de IA usou as chaves do site ainda.';
+$string['report_intro'] = 'Requisições de geração de IA atendidas pelas chaves de API do site, de todos os usuários.';
+$string['report_title'] = 'Relatório de uso de IA do site';
+$string['report_user'] = 'Usuário';
 $string['settings_gemini_key'] = 'Chave de API Gemini';
 $string['settings_gemini_key_desc'] = 'Chave de API de todo o site para o Google Gemini. Usada quando o usuário não tem chave pessoal.';
 $string['settings_groq_key'] = 'Chave de API Groq';

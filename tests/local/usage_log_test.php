@@ -44,7 +44,7 @@ final class usage_log_test extends \advanced_testcase {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();
 
-        $id = usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', '', true);
+        $id = usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', '', true, 'site');
 
         $row = $DB->get_record(usage_log::TABLE, ['id' => $id], '*', MUST_EXIST);
         $this->assertSame((int) $user->id, (int) $row->userid);
@@ -52,7 +52,44 @@ final class usage_log_test extends \advanced_testcase {
         $this->assertSame('Concepts: test', $row->description);
         $this->assertSame('Gemini', $row->provider);
         $this->assertNull($row->model);
+        $this->assertSame('site', $row->keysource);
         $this->assertSame(1, (int) $row->success);
+    }
+
+    /**
+     * The site readers return only site-key rows, across all users, newest first.
+     *
+     * @covers ::get_recent_site
+     * @covers ::get_all_site
+     * @covers ::user_fullnames
+     * @return void
+     */
+    public function test_site_readers(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $other = $this->getDataGenerator()->create_user();
+
+        usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', 'flash', true, 'site');
+        usage_log::record((int) $other->id, 'local_aiassess', 'Forum review', 'Groq', 'llama', true, 'site');
+        // A personal-key row and an untagged row must be excluded.
+        usage_log::record((int) $user->id, 'report_unlocker', 'Restriction help', 'OpenAI', 'gpt', true, 'personal');
+        usage_log::record((int) $user->id, 'local_playergames', 'Legacy row', 'Gemini', 'flash', true);
+
+        $rows = usage_log::get_all_site();
+        $this->assertCount(2, $rows);
+
+        $components = array_column(array_values($rows), 'component');
+        $this->assertContains('local_playergames', $components);
+        $this->assertContains('local_aiassess', $components);
+        $this->assertNotContains('report_unlocker', $components);
+
+        $recent = usage_log::get_recent_site(1);
+        $this->assertCount(1, $recent);
+
+        $names = usage_log::user_fullnames($rows);
+        $this->assertArrayHasKey((int) $user->id, $names);
+        $this->assertArrayHasKey((int) $other->id, $names);
+        $this->assertSame(fullname($user), $names[(int) $user->id]);
     }
 
     /**

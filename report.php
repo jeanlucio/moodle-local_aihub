@@ -15,18 +15,35 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version definition.
+ * Admin report of AI usage served by the site-wide keys.
  *
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+require(__DIR__ . '/../../config.php');
+require_once($CFG->libdir . '/adminlib.php');
 
-$plugin->component = 'local_aihub';
-$plugin->version   = 2026062904;
-$plugin->requires  = 2024100700;
-$plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.1.0';
+use local_aihub\local\export;
+use local_aihub\output\report;
+
+require_login();
+
+$context = context_system::instance();
+require_capability('local/aihub:viewusage', $context);
+
+// Stream the report download before any page output is sent.
+$download = optional_param('download', '', PARAM_ALPHA);
+if ($download !== '' && in_array($download, export::FORMATS, true)) {
+    export::download_site($download);
+}
+
+admin_externalpage_setup('local_aihub_report');
+
+$output = $PAGE->get_renderer('local_aihub');
+
+echo $output->header();
+echo $output->heading(get_string('report_title', 'local_aihub'));
+echo $output->render(new report());
+echo $output->footer();

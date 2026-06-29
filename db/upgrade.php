@@ -43,5 +43,21 @@ function xmldb_local_aihub_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026062903, 'local', 'aihub');
     }
 
+    if ($oldversion < 2026062904) {
+        // Record which key tier (personal or site) served each request.
+        $table = new xmldb_table('local_aihub_log');
+        $field = new xmldb_field('keysource', XMLDB_TYPE_CHAR, '20', null, null, null, null, 'model');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $index = new xmldb_index('idx_keysource', XMLDB_INDEX_NOTUNIQUE, ['keysource']);
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        upgrade_plugin_savepoint(true, 2026062904, 'local', 'aihub');
+    }
+
     return true;
 }

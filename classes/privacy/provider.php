@@ -64,6 +64,7 @@ class provider implements
             'description' => 'privacy:metadata:logtable:description',
             'provider'    => 'privacy:metadata:logtable:provider',
             'model'       => 'privacy:metadata:logtable:model',
+            'keysource'   => 'privacy:metadata:logtable:keysource',
             'timecreated' => 'privacy:metadata:logtable:timecreated',
         ], 'privacy:metadata:logtable');
 
@@ -153,6 +154,7 @@ class provider implements
                     'description' => $record->description,
                     'provider'    => $record->provider,
                     'model'       => $record->model,
+                    'keysource'   => $record->keysource,
                     'timecreated' => \core_privacy\local\request\transform::datetime($record->timecreated),
                 ];
             }

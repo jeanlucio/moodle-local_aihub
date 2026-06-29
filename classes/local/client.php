@@ -46,7 +46,7 @@ class client {
      * @param string $user User prompt text.
      * @param bool $jsonmode Whether to request structured JSON output.
      * @param int|null $userid User whose personal tier is tried first. Defaults to $USER->id.
-     * @return array Keys: success (bool), data (string), provider (string), model (string), message (string).
+     * @return array Keys: success (bool), data (string), provider (string), model (string), keysource (string), message (string).
      */
     public function generate_text(string $system, string $user, bool $jsonmode = false, ?int $userid = null): array {
         global $USER;
@@ -90,6 +90,7 @@ class client {
         int $userid,
         array &$lasterror
     ): ?array {
+        $keysource = $personal ? 'personal' : 'site';
         $key = function (string $provider) use ($personal, $userid): string {
             return $personal
                 ? keys::get_personal_key($provider, $userid)
@@ -100,7 +101,7 @@ class client {
         if ($geminikey !== '') {
             $result = $this->call_gemini($system, $user, $geminikey, $jsonmode);
             if ($result['success']) {
-                return $result;
+                return $result + ['keysource' => $keysource];
             }
             $lasterror = $result;
         }
@@ -109,7 +110,7 @@ class client {
         if ($groqkey !== '') {
             $result = $this->call_groq($system, $user, $groqkey, $jsonmode);
             if ($result['success']) {
-                return $result;
+                return $result + ['keysource' => $keysource];
             }
             $lasterror = $result;
         }
@@ -135,7 +136,7 @@ class client {
             if ($this->is_safe_url($openaiurl)) {
                 $result = $this->call_openai_compatible($system, $user, $openaikey, $openaiurl, $model, $jsonmode);
                 if ($result['success']) {
-                    return $result;
+                    return $result + ['keysource' => $keysource];
                 }
                 $lasterror = $result;
             }
