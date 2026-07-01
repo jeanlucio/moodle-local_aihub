@@ -119,4 +119,28 @@ final class ai_test extends \advanced_testcase {
         $this->assertFalse($result['success']);
         $this->assertSame(0, $DB->count_records(usage_log::TABLE));
     }
+
+    /**
+     * A consumer that resolved a hub key itself and made its own request can still
+     * report that usage, without going through generate_text()/the client.
+     *
+     * @covers ::report_usage
+     * @return void
+     */
+    public function test_report_usage_writes_log_row(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        ai::report_usage((int) get_admin()->id, 'block_playerhud', 'item', 'Gemini', 'gemini-flash-latest', 'site');
+
+        $rows = $DB->get_records(usage_log::TABLE);
+        $this->assertCount(1, $rows);
+        $row = reset($rows);
+        $this->assertSame('block_playerhud', $row->component);
+        $this->assertSame('item', $row->description);
+        $this->assertSame('Gemini', $row->provider);
+        $this->assertSame('site', $row->keysource);
+        $this->assertSame(1, (int) $row->success);
+    }
 }

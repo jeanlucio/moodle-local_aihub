@@ -87,6 +87,34 @@ class ai {
     }
 
     /**
+     * Records usage of a hub-borrowed key for a plugin that made its own request.
+     *
+     * For a consumer that resolves the key itself via \local_aihub\local\keys (e.g.
+     * because it needs a request shape generate_text() does not support, such as a
+     * separate system/user split or provider-specific parsing) and still wants that
+     * use of a hub key to show up in the site usage report. Consumers that can use
+     * generate_text() directly should prefer it: it logs automatically.
+     *
+     * @param int $userid The user who requested the generation.
+     * @param string $component Frankenstyle of the calling plugin.
+     * @param string $description Short label of what was generated (may be empty).
+     * @param string $provider Provider display name (Gemini, Groq, OpenAI).
+     * @param string $model Model identifier used (may be empty).
+     * @param string $keysource Which hub tier served the request: 'personal' or 'site'.
+     * @return void
+     */
+    public static function report_usage(
+        int $userid,
+        string $component,
+        string $description,
+        string $provider,
+        string $model,
+        string $keysource
+    ): void {
+        usage_log::record($userid, $component, $description, $provider, $model, true, $keysource);
+    }
+
+    /**
      * Returns true when at least one BYOK key (personal or site) is available.
      *
      * Does not consider core_ai. Consumers combine this with their own core_ai
