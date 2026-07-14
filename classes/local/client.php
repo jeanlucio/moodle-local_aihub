@@ -115,6 +115,15 @@ class client {
             $lasterror = $result;
         }
 
+        $deepseekkey = $key(keys::PROVIDER_DEEPSEEK);
+        if ($deepseekkey !== '') {
+            $result = $this->call_deepseek($system, $user, $deepseekkey, $jsonmode);
+            if ($result['success']) {
+                return $result + ['keysource' => $keysource];
+            }
+            $lasterror = $result;
+        }
+
         $openaikey = $key(keys::PROVIDER_OPENAI);
         if ($openaikey !== '') {
             // URL and model follow the same tier as the key: the personal tier
@@ -196,6 +205,32 @@ class client {
             ['Authorization: Bearer ' . $key, 'Content-Type: application/json'],
             'Groq'
         ) + ['model' => 'llama-3.3-70b-versatile'];
+    }
+
+    /**
+     * Calls the DeepSeek inference API.
+     *
+     * @param string $system System instruction (may be empty).
+     * @param string $user User prompt text.
+     * @param string $key DeepSeek API key.
+     * @param bool $jsonmode Whether to force JSON output.
+     * @return array HTTP result array.
+     */
+    protected function call_deepseek(string $system, string $user, string $key, bool $jsonmode): array {
+        $url = 'https://api.deepseek.com/chat/completions';
+        $data = [
+            'model' => 'deepseek-chat',
+            'messages' => $this->build_chat_messages($system, $user),
+        ];
+        if ($jsonmode) {
+            $data['response_format'] = ['type' => 'json_object'];
+        }
+        return $this->http_post(
+            $url,
+            json_encode($data),
+            ['Authorization: Bearer ' . $key, 'Content-Type: application/json'],
+            'DeepSeek'
+        ) + ['model' => 'deepseek-chat'];
     }
 
     /**

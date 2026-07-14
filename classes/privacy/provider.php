@@ -68,12 +68,18 @@ class provider implements
             'timecreated' => 'privacy:metadata:logtable:timecreated',
         ], 'privacy:metadata:logtable');
 
+        $collection->add_user_preference('local_aihub_deepseek_key', 'privacy:metadata:preference:deepseek_key');
         $collection->add_user_preference('local_aihub_gemini_key', 'privacy:metadata:preference:gemini_key');
         $collection->add_user_preference('local_aihub_groq_key', 'privacy:metadata:preference:groq_key');
         $collection->add_user_preference('local_aihub_openai_key', 'privacy:metadata:preference:openai_key');
         $collection->add_user_preference('local_aihub_openai_url', 'privacy:metadata:preference:openai_url');
         $collection->add_user_preference('local_aihub_openai_model', 'privacy:metadata:preference:openai_model');
 
+        $collection->add_external_location_link(
+            'deepseek',
+            ['prompt' => 'privacy:metadata:external:prompt'],
+            'privacy:metadata:external:deepseek'
+        );
         $collection->add_external_location_link(
             'google_gemini',
             ['prompt' => 'privacy:metadata:external:prompt'],
@@ -176,6 +182,7 @@ class provider implements
         $redacted = get_string('privacy:redacted', 'local_aihub');
 
         $secrets = [
+            'local_aihub_deepseek_key' => 'privacy:metadata:preference:deepseek_key',
             'local_aihub_gemini_key' => 'privacy:metadata:preference:gemini_key',
             'local_aihub_groq_key'   => 'privacy:metadata:preference:groq_key',
             'local_aihub_openai_key' => 'privacy:metadata:preference:openai_key',

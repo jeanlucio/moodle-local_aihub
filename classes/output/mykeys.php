@@ -48,9 +48,10 @@ class mykeys implements renderable, templatable {
 
     /** @var array<string, string> Font Awesome icon class per provider display name. */
     private const PROVIDER_ICONS = [
-        'Gemini' => 'fa-google',
-        'Groq'   => 'fa-bolt',
-        'OpenAI' => 'fa-plug',
+        'DeepSeek' => 'fa-search',
+        'Gemini'   => 'fa-google',
+        'Groq'     => 'fa-bolt',
+        'OpenAI'   => 'fa-plug',
     ];
 
     /**
@@ -114,9 +115,10 @@ class mykeys implements renderable, templatable {
      */
     private function provider_rows(): array {
         $labels = [
-            keys::PROVIDER_GEMINI => get_string('provider_gemini', 'local_aihub'),
-            keys::PROVIDER_GROQ   => get_string('provider_groq', 'local_aihub'),
-            keys::PROVIDER_OPENAI => get_string('provider_openai', 'local_aihub'),
+            keys::PROVIDER_GEMINI   => get_string('provider_gemini', 'local_aihub'),
+            keys::PROVIDER_GROQ     => get_string('provider_groq', 'local_aihub'),
+            keys::PROVIDER_DEEPSEEK => get_string('provider_deepseek', 'local_aihub'),
+            keys::PROVIDER_OPENAI   => get_string('provider_openai', 'local_aihub'),
         ];
 
         $rows = [];

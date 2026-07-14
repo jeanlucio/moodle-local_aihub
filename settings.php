@@ -61,6 +61,13 @@ if ($hassiteconfig) {
     ));
 
     $settings->add(new admin_setting_configpasswordunmask(
+        'local_aihub/deepseek_key',
+        get_string('settings_deepseek_key', 'local_aihub'),
+        get_string('settings_deepseek_key_desc', 'local_aihub'),
+        ''
+    ));
+
+    $settings->add(new admin_setting_configpasswordunmask(
         'local_aihub/openai_key',
         get_string('settings_openai_key', 'local_aihub'),
         get_string('settings_openai_key_desc', 'local_aihub'),

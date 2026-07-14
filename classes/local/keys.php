@@ -42,6 +42,9 @@ class keys {
     /** @var string Groq provider identifier. */
     const PROVIDER_GROQ = 'groq';
 
+    /** @var string DeepSeek provider identifier. */
+    const PROVIDER_DEEPSEEK = 'deepseek';
+
     /** @var string OpenAI-compatible provider identifier. */
     const PROVIDER_OPENAI = 'openai';
 
@@ -54,7 +57,7 @@ class keys {
      * @return string[]
      */
     public static function providers(): array {
-        return [self::PROVIDER_GEMINI, self::PROVIDER_GROQ, self::PROVIDER_OPENAI];
+        return [self::PROVIDER_GEMINI, self::PROVIDER_GROQ, self::PROVIDER_DEEPSEEK, self::PROVIDER_OPENAI];
     }
 
     /**
