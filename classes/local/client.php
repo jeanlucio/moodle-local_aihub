@@ -331,24 +331,7 @@ class client {
                 return false;
             }
         } else {
-            $resolvedips = [];
-            $arecords = dns_get_record($host, DNS_A);
-            if (is_array($arecords)) {
-                foreach ($arecords as $r) {
-                    if (!empty($r['ip'])) {
-                        $resolvedips[] = $r['ip'];
-                    }
-                }
-            }
-            $aaaarecords = dns_get_record($host, DNS_AAAA);
-            if (is_array($aaaarecords)) {
-                foreach ($aaaarecords as $r) {
-                    if (!empty($r['ipv6'])) {
-                        $resolvedips[] = $r['ipv6'];
-                    }
-                }
-            }
-            foreach ($resolvedips as $resolvedip) {
+            foreach ($this->resolve_dns($host) as $resolvedip) {
                 $ispublic = filter_var(
                     $resolvedip,
                     FILTER_VALIDATE_IP,
@@ -360,6 +343,36 @@ class client {
             }
         }
         return true;
+    }
+
+    /**
+     * Resolves a hostname's A and AAAA records to a flat list of IP strings.
+     *
+     * Isolated from {@see self::is_safe_url()} so tests can stub DNS resolution
+     * without depending on real network lookups.
+     *
+     * @param string $host The hostname to resolve.
+     * @return string[] Resolved IPv4/IPv6 addresses (empty when none are found).
+     */
+    protected function resolve_dns(string $host): array {
+        $resolvedips = [];
+        $arecords = dns_get_record($host, DNS_A);
+        if (is_array($arecords)) {
+            foreach ($arecords as $r) {
+                if (!empty($r['ip'])) {
+                    $resolvedips[] = $r['ip'];
+                }
+            }
+        }
+        $aaaarecords = dns_get_record($host, DNS_AAAA);
+        if (is_array($aaaarecords)) {
+            foreach ($aaaarecords as $r) {
+                if (!empty($r['ipv6'])) {
+                    $resolvedips[] = $r['ipv6'];
+                }
+            }
+        }
+        return $resolvedips;
     }
 
     /**

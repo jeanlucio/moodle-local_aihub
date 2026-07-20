@@ -28,6 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/local/aihub/tests/fixtures/mock_client.php');
+require_once($CFG->dirroot . '/local/aihub/tests/fixtures/dns_stub_client.php');
 
 /**
  * Tests for {@see client}.
@@ -71,6 +72,48 @@ final class client_test extends \advanced_testcase {
         $this->assertFalse($this->call_protected($client, 'is_safe_url', ['ftp://8.8.8.8/v1']));
 
         $this->assertTrue($this->call_protected($client, 'is_safe_url', ['https://8.8.8.8/chat/completions']));
+    }
+
+    /**
+     * A hostname resolving to a private IP is blocked (anti DNS-rebinding).
+     *
+     * @covers ::is_safe_url
+     * @covers ::resolve_dns
+     * @return void
+     */
+    public function test_is_safe_url_blocks_dns_rebinding(): void {
+        $client = new dns_stub_client();
+        $client->dnsresult = ['10.0.0.5'];
+
+        $this->assertFalse($this->call_protected($client, 'is_safe_url', ['https://internal.example.com/v1']));
+    }
+
+    /**
+     * A hostname resolving only to public IPs passes.
+     *
+     * @covers ::is_safe_url
+     * @covers ::resolve_dns
+     * @return void
+     */
+    public function test_is_safe_url_allows_public_dns_resolution(): void {
+        $client = new dns_stub_client();
+        $client->dnsresult = ['8.8.8.8'];
+
+        $this->assertTrue($this->call_protected($client, 'is_safe_url', ['https://api.example.com/v1']));
+    }
+
+    /**
+     * A hostname with no resolvable DNS records is allowed through (nothing to block).
+     *
+     * @covers ::is_safe_url
+     * @covers ::resolve_dns
+     * @return void
+     */
+    public function test_is_safe_url_allows_when_dns_resolves_to_nothing(): void {
+        $client = new dns_stub_client();
+        $client->dnsresult = [];
+
+        $this->assertTrue($this->call_protected($client, 'is_safe_url', ['https://unresolvable.example.com/v1']));
     }
 
     /**

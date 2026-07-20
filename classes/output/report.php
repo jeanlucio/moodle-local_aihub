@@ -43,9 +43,10 @@ use templatable;
 class report implements renderable, templatable {
     /** @var array<string, string> Font Awesome icon class per provider display name. */
     private const PROVIDER_ICONS = [
-        'Gemini' => 'fa-google',
-        'Groq'   => 'fa-bolt',
-        'OpenAI' => 'fa-plug',
+        'DeepSeek' => 'fa-search',
+        'Gemini'   => 'fa-google',
+        'Groq'     => 'fa-bolt',
+        'OpenAI'   => 'fa-plug',
     ];
 
     /**
