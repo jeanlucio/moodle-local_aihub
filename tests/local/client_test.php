@@ -112,7 +112,7 @@ final class client_test extends \advanced_testcase {
         set_config('gemini_key', 'site-gemini', 'local_aihub');
 
         $client = new mock_client();
-        $client->results['Groq'] = ['success' => true, 'data' => 'ok', 'provider' => 'Groq', 'model' => 'llama'];
+        $client->results['Groq'] = ['success' => true, 'data' => 'ok', 'provider' => 'Groq', 'model' => 'openai/gpt-oss-120b'];
 
         $result = $client->generate_text('', 'hello');
 
@@ -138,13 +138,45 @@ final class client_test extends \advanced_testcase {
 
         $client = new mock_client();
         $client->results['Gemini'] = ['success' => false, 'message' => 'Gemini: down', 'provider' => 'Gemini'];
-        $client->results['Groq'] = ['success' => true, 'data' => 'ok', 'provider' => 'Groq', 'model' => 'llama'];
+        $client->results['Groq'] = ['success' => true, 'data' => 'ok', 'provider' => 'Groq', 'model' => 'openai/gpt-oss-120b'];
 
         $result = $client->generate_text('', 'hello');
 
         $this->assertTrue($result['success']);
         $this->assertSame('Groq', $result['provider']);
         $this->assertSame(['Gemini', 'Groq'], $client->calls);
+    }
+
+    /**
+     * Gemini and Groq failing falls through to DeepSeek within the same tier.
+     *
+     * @covers ::generate_text
+     * @covers ::try_key_tier
+     * @return void
+     */
+    public function test_deepseek_fallthrough_within_tier(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+        set_config('deepseek_key', 'site-deepseek', 'local_aihub');
+
+        $client = new mock_client();
+        $client->results['Gemini'] = ['success' => false, 'message' => 'Gemini: down', 'provider' => 'Gemini'];
+        $client->results['Groq'] = ['success' => false, 'message' => 'Groq: down', 'provider' => 'Groq'];
+        $client->results['DeepSeek'] = [
+            'success'  => true,
+            'data'     => 'ok',
+            'provider' => 'DeepSeek',
+            'model'    => 'deepseek-v4-flash',
+        ];
+
+        $result = $client->generate_text('', 'hello');
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('DeepSeek', $result['provider']);
+        $this->assertSame(['Gemini', 'Groq', 'DeepSeek'], $client->calls);
     }
 
     /**

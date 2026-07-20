@@ -4,6 +4,19 @@ All notable changes to this plugin are documented here.
 
 ---
 
+## [v1.1.0] — 2026-07-20
+
+### Added
+- `\local_aihub\ai::report_usage()`: lets a consumer that resolves a hub key directly
+  (bypassing `generate_text()` for a request shape it does not support) still report that
+  use in the site usage report.
+
+### Changed
+- Groq requests now use `openai/gpt-oss-120b` instead of the deprecated
+  `llama-3.3-70b-versatile`, which Groq is decommissioning on 2026-08-16.
+
+---
+
 ## [v1.0.0] — 2026-06-29
 
 First public release.
