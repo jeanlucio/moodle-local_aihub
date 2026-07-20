@@ -4,6 +4,14 @@ All notable changes to this plugin are documented here.
 
 ---
 
+## [v1.2.0] — 2026-07-20
+
+### Added
+- **DeepSeek** support: site and personal API keys, added to the provider ladder between
+  Groq and the OpenAI-compatible slot. Contributed by Smat Learn (Smartlearn-edu).
+
+---
+
 ## [v1.1.0] — 2026-07-20
 
 ### Added
