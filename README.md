@@ -181,11 +181,19 @@ No. The plugin installs and runs without any key — it simply reports that no s
 
 #### Supported providers
 
-- **Google Gemini** — https://ai.google.dev/
-- **Groq** — https://console.groq.com/
-- **OpenAI-compatible APIs** — any provider that follows the OpenAI API format (OpenRouter, self-hosted models via LM Studio, an Ollama proxy, etc.)
+- **Google Gemini** — https://ai.google.dev/ — model: `gemini-flash-latest` (rolling alias, always Google's current Flash release; fixed, not configurable)
+- **Groq** — https://console.groq.com/ — model: `openai/gpt-oss-120b` (fixed, not configurable; see [Model choice](#groq-model-choice) below)
+- **OpenAI-compatible APIs** — any provider that follows the OpenAI API format (OpenRouter, self-hosted models via LM Studio, an Ollama proxy, etc.) — model: configurable per key (site setting / personal key), defaults to `gpt-4o-mini` when left empty
 
 These services operate under their own terms of service and privacy policies.
+
+##### Groq model choice
+
+The Groq slot calls a single fixed model, `openai/gpt-oss-120b`. Groq periodically deprecates
+specific model IDs (e.g. `llama-3.3-70b-versatile`, decommissioned 2026-08-16) and expects
+migration to a named replacement. Among the free-tier options Groq recommended for this migration,
+`openai/gpt-oss-120b` was chosen over `qwen/qwen3.6-27b` for stronger instruction-following and
+more reliable JSON-mode output across the varied prompts sent by different consumer plugins.
 
 #### How to obtain an API key
 
@@ -386,11 +394,20 @@ Não. O plugin instala e funciona sem nenhuma chave — apenas informa que não 
 
 #### Provedores suportados
 
-- **Google Gemini** — https://ai.google.dev/
-- **Groq** — https://console.groq.com/
-- **APIs compatíveis com OpenAI** — qualquer provedor que siga o formato da API OpenAI (OpenRouter, modelos auto-hospedados via LM Studio, um proxy Ollama, etc.)
+- **Google Gemini** — https://ai.google.dev/ — modelo: `gemini-flash-latest` (alias rolante, sempre a versão Flash atual do Google; fixo, não configurável)
+- **Groq** — https://console.groq.com/ — modelo: `openai/gpt-oss-120b` (fixo, não configurável; ver [Escolha do modelo](#escolha-do-modelo-groq) abaixo)
+- **APIs compatíveis com OpenAI** — qualquer provedor que siga o formato da API OpenAI (OpenRouter, modelos auto-hospedados via LM Studio, um proxy Ollama, etc.) — modelo: configurável por chave (config de site / chave pessoal), padrão `gpt-4o-mini` quando vazio
 
 Esses serviços operam sob seus próprios termos de serviço e políticas de privacidade.
+
+##### Escolha do modelo Groq
+
+O slot da Groq chama um único modelo fixo, `openai/gpt-oss-120b`. A Groq descontinua periodicamente
+IDs de modelo específicos (ex.: `llama-3.3-70b-versatile`, descomissionado em 16/08/2026) e espera
+migração para um substituto nomeado. Entre as opções gratuitas recomendadas pela Groq para essa
+migração, o `openai/gpt-oss-120b` foi escolhido em vez do `qwen/qwen3.6-27b` por seguir instruções
+melhor e ser mais confiável em modo JSON entre os prompts variados enviados pelos diferentes
+plugins consumidores.
 
 #### Como obter uma chave de API
 

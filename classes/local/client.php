@@ -184,7 +184,7 @@ class client {
     protected function call_groq(string $system, string $user, string $key, bool $jsonmode): array {
         $url = 'https://api.groq.com/openai/v1/chat/completions';
         $data = [
-            'model' => 'llama-3.3-70b-versatile',
+            'model' => 'openai/gpt-oss-120b',
             'messages' => $this->build_chat_messages($system, $user),
         ];
         if ($jsonmode) {
@@ -195,7 +195,7 @@ class client {
             json_encode($data),
             ['Authorization: Bearer ' . $key, 'Content-Type: application/json'],
             'Groq'
-        ) + ['model' => 'llama-3.3-70b-versatile'];
+        ) + ['model' => 'openai/gpt-oss-120b'];
     }
 
     /**

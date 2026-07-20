@@ -112,7 +112,7 @@ final class client_test extends \advanced_testcase {
         set_config('gemini_key', 'site-gemini', 'local_aihub');
 
         $client = new mock_client();
-        $client->results['Groq'] = ['success' => true, 'data' => 'ok', 'provider' => 'Groq', 'model' => 'llama'];
+        $client->results['Groq'] = ['success' => true, 'data' => 'ok', 'provider' => 'Groq', 'model' => 'openai/gpt-oss-120b'];
 
         $result = $client->generate_text('', 'hello');
 
@@ -138,7 +138,7 @@ final class client_test extends \advanced_testcase {
 
         $client = new mock_client();
         $client->results['Gemini'] = ['success' => false, 'message' => 'Gemini: down', 'provider' => 'Gemini'];
-        $client->results['Groq'] = ['success' => true, 'data' => 'ok', 'provider' => 'Groq', 'model' => 'llama'];
+        $client->results['Groq'] = ['success' => true, 'data' => 'ok', 'provider' => 'Groq', 'model' => 'openai/gpt-oss-120b'];
 
         $result = $client->generate_text('', 'hello');
 
