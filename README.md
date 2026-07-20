@@ -42,7 +42,7 @@ It is a **service plugin for developers**: it exposes a one-call PHP facade that
 
 ### ✨ Features
 
-* 🔑 **BYOK key store:** **site** keys (admin) and optional **personal** keys (per user, opt-in) for **Gemini**, **Groq** and any **OpenAI-compatible** endpoint.
+* 🔑 **BYOK key store:** **site** keys (admin) and optional **personal** keys (per user, opt-in) for **Gemini**, **Groq**, **DeepSeek** and any **OpenAI-compatible** endpoint.
 * 🪜 **Personal → site resolution:** the hub tries the user's own key first, then the site key, exposing a single result to the caller.
 * 🧩 **One-call facade:** `\local_aihub\ai::generate_text()` and `is_available()` — consumed by sibling plugins through a soft dependency (`class_exists`), with no hard dependency entry.
 * 🚫 **Does not wrap `core_ai`:** each consumer keeps its own `core_ai` fallback, so a site that already has `core_ai` configured needs **no extra setup** — the hub stays optional.
@@ -94,7 +94,7 @@ The hub resolves a key **tier by tier** and stops at the first tier that holds a
 | 1 | **Personal key** — the user's own key, when personal keys are enabled and the user has `local/aihub:usepersonalkey` |
 | 2 | **Site key** — the admin key set in the hub settings |
 
-**Within the chosen tier**, providers are tried in the order **Gemini → Groq → OpenAI-compatible** (first key found is used; if its call fails, the next provider in the same tier is tried). When no tier holds a key, `generate_text()` returns `success = false` — the hub never falls back to `core_ai`; that decision belongs to the consumer.
+**Within the chosen tier**, providers are tried in the order **Gemini → Groq → DeepSeek → OpenAI-compatible** (first key found is used; if its call fails, the next provider in the same tier is tried). When no tier holds a key, `generate_text()` returns `success = false` — the hub never falls back to `core_ai`; that decision belongs to the consumer.
 
 ---
 
@@ -183,6 +183,7 @@ No. The plugin installs and runs without any key — it simply reports that no s
 
 - **Google Gemini** — https://ai.google.dev/ — model: `gemini-flash-latest` (rolling alias, always Google's current Flash release; fixed, not configurable)
 - **Groq** — https://console.groq.com/ — model: `openai/gpt-oss-120b` (fixed, not configurable; see [Model choice](#groq-model-choice) below)
+- **DeepSeek** — https://deepseek.com/ — model: `deepseek-v4-flash` (fixed, not configurable)
 - **OpenAI-compatible APIs** — any provider that follows the OpenAI API format (OpenRouter, self-hosted models via LM Studio, an Ollama proxy, etc.) — model: configurable per key (site setting / personal key), defaults to `gpt-4o-mini` when left empty
 
 These services operate under their own terms of service and privacy policies.
@@ -210,6 +211,7 @@ When a key resolves to a provider, the **prompt text is transmitted** to that pr
 
 - **Google Gemini** — `generativelanguage.googleapis.com`
 - **Groq** — `api.groq.com`
+- **DeepSeek** — `api.deepseek.com`
 - **OpenAI-compatible** — the endpoint configured by the admin or user (default `api.openai.com`)
 
 The hub stores a **usage log** (who requested, which component, a short label of what was generated, provider, model, key tier and time) but **does not store prompts or AI responses**. All external destinations are declared in the plugin's Privacy provider.
@@ -255,7 +257,7 @@ A **Central de IA** é um pequeno intermediário **BYOK (traga sua própria chav
 
 ### ✨ Funcionalidades
 
-* 🔑 **Armazenamento BYOK:** chaves de **site** (admin) e chaves **pessoais** opcionais (por usuário, opt-in) para **Gemini**, **Groq** e qualquer endpoint **compatível com OpenAI**.
+* 🔑 **Armazenamento BYOK:** chaves de **site** (admin) e chaves **pessoais** opcionais (por usuário, opt-in) para **Gemini**, **Groq**, **DeepSeek** e qualquer endpoint **compatível com OpenAI**.
 * 🪜 **Resolução pessoal → site:** o hub tenta a chave do próprio usuário primeiro, depois a de site, expondo um único resultado ao chamador.
 * 🧩 **Fachada de uma chamada:** `\local_aihub\ai::generate_text()` e `is_available()` — consumidas pelos plugins irmãos por dependência **soft** (`class_exists`), sem dependência dura.
 * 🚫 **Não embrulha o `core_ai`:** cada consumidor mantém o próprio fallback para `core_ai`, então um site que já tem `core_ai` configurado **não precisa de nada extra** — o hub continua opcional.
@@ -307,7 +309,7 @@ O hub resolve a chave **tier por tier** e para no primeiro tier que tiver uma ch
 | 1 | **Chave pessoal** — a chave do próprio usuário, quando as chaves pessoais estão habilitadas e o usuário tem `local/aihub:usepersonalkey` |
 | 2 | **Chave de site** — a chave de admin definida nas configurações do hub |
 
-**Dentro do tier escolhido**, os provedores são tentados na ordem **Gemini → Groq → compatível com OpenAI** (a primeira chave encontrada é usada; se a chamada falhar, o próximo provedor do mesmo tier é tentado). Quando nenhum tier tem chave, `generate_text()` retorna `success = false` — o hub nunca cai para o `core_ai`; essa decisão é do consumidor.
+**Dentro do tier escolhido**, os provedores são tentados na ordem **Gemini → Groq → DeepSeek → compatível com OpenAI** (a primeira chave encontrada é usada; se a chamada falhar, o próximo provedor do mesmo tier é tentado). Quando nenhum tier tem chave, `generate_text()` retorna `success = false` — o hub nunca cai para o `core_ai`; essa decisão é do consumidor.
 
 ---
 
@@ -396,6 +398,7 @@ Não. O plugin instala e funciona sem nenhuma chave — apenas informa que não 
 
 - **Google Gemini** — https://ai.google.dev/ — modelo: `gemini-flash-latest` (alias rolante, sempre a versão Flash atual do Google; fixo, não configurável)
 - **Groq** — https://console.groq.com/ — modelo: `openai/gpt-oss-120b` (fixo, não configurável; ver [Escolha do modelo](#escolha-do-modelo-groq) abaixo)
+- **DeepSeek** — https://deepseek.com/ — modelo: `deepseek-v4-flash` (fixo, não configurável)
 - **APIs compatíveis com OpenAI** — qualquer provedor que siga o formato da API OpenAI (OpenRouter, modelos auto-hospedados via LM Studio, um proxy Ollama, etc.) — modelo: configurável por chave (config de site / chave pessoal), padrão `gpt-4o-mini` quando vazio
 
 Esses serviços operam sob seus próprios termos de serviço e políticas de privacidade.
@@ -424,6 +427,7 @@ Quando uma chave é resolvida para um provedor, o **texto do prompt é transmiti
 
 - **Google Gemini** — `generativelanguage.googleapis.com`
 - **Groq** — `api.groq.com`
+- **DeepSeek** — `api.deepseek.com`
 - **Compatível com OpenAI** — o endpoint configurado pelo admin ou usuário (padrão `api.openai.com`)
 
 O hub guarda um **log de uso** (quem solicitou, qual componente, um rótulo curto do que foi gerado, provedor, modelo, tier da chave e horário), mas **não guarda prompts nem respostas da IA**. Todos os destinos externos estão declarados no Privacy provider do plugin.

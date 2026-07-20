@@ -55,6 +55,12 @@ class mock_client extends client {
     }
 
     #[\Override]
+    protected function call_deepseek(string $system, string $user, string $key, bool $jsonmode): array {
+        $this->calls[] = 'DeepSeek';
+        return $this->results['DeepSeek'] ?? ['success' => false, 'message' => 'DeepSeek: stub', 'provider' => 'DeepSeek'];
+    }
+
+    #[\Override]
     protected function call_openai_compatible(
         string $system,
         string $user,
