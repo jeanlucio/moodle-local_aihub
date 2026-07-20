@@ -78,6 +78,34 @@ final class keys_test extends \advanced_testcase {
     }
 
     /**
+     * The personal OpenAI-compatible base URL and model are saved, read back and cleared.
+     *
+     * @covers ::save_user_openai_url
+     * @covers ::save_user_openai_model
+     * @covers ::get_personal_openai_url
+     * @covers ::get_personal_openai_model
+     * @return void
+     */
+    public function test_personal_openai_roundtrip(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+
+        $this->assertSame('', keys::get_personal_openai_url());
+        $this->assertSame('', keys::get_personal_openai_model());
+
+        keys::save_user_openai_url('https://openrouter.ai/api/v1');
+        keys::save_user_openai_model('gpt-4o');
+        $this->assertSame('https://openrouter.ai/api/v1', keys::get_personal_openai_url());
+        $this->assertSame('gpt-4o', keys::get_personal_openai_model());
+
+        keys::save_user_openai_url('');
+        keys::save_user_openai_model('');
+        $this->assertSame('', keys::get_personal_openai_url());
+        $this->assertSame('', keys::get_personal_openai_model());
+    }
+
+    /**
      * Personal keys require both the site toggle and the per-user capability.
      *
      * @covers ::personal_keys_allowed
