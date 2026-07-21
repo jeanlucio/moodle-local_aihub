@@ -42,3 +42,8 @@ When a key resolves to a provider, the **prompt text is transmitted** to that pr
 - **OpenAI-compatible** — the endpoint configured by the admin or user (default `api.openai.com`)
 
 The hub stores a **usage log** (who requested, which component, a short label of what was generated, provider, model, key tier and time) but **does not store prompts or AI responses**. All external destinations are declared in the plugin's Privacy provider.
+
+### Demo credentials
+
+Not applicable — no credentials are required to install or use the hub. Every AI feature stays
+inert until a site or personal key is configured.

@@ -43,3 +43,8 @@ Quando uma chave é resolvida para um provedor, o **texto do prompt é transmiti
 - **Compatível com OpenAI** — o endpoint configurado pelo admin ou usuário (padrão `api.openai.com`)
 
 O hub guarda um **log de uso** (quem solicitou, qual componente, um rótulo curto do que foi gerado, provedor, modelo, tier da chave e horário), mas **não guarda prompts nem respostas da IA**. Todos os destinos externos estão declarados no Privacy provider do plugin.
+
+### Credenciais de demonstração
+
+Não aplicável — nenhuma credencial é exigida para instalar ou usar o hub. Todo recurso de IA
+fica inerte até que uma chave de site ou pessoal seja configurada.

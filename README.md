@@ -24,7 +24,18 @@ It is a **service plugin for developers**: it exposes a one-call PHP facade that
 An API key is **optional** and the plugin installs and works without one. When a key is
 configured and a generation is requested, the prompt text is sent to the matching provider
 (Gemini, Groq, DeepSeek, or the configured OpenAI-compatible endpoint) — the hub never contacts
-a provider on its own. Full disclosure, including exact model ids and data destinations:
+a provider on its own.
+
+* **Cost:** None required to install or use the hub itself. Gemini, Groq and DeepSeek currently
+  offer free usage tiers or trial credits (pricing policies may change); any cost beyond that is
+  set entirely by the chosen provider.
+* **API keys:** Not provided by the hub. Obtain a key directly from the provider's own website
+  and configure it as a site key at **Site administration > Plugins > Local plugins > AI Hub**,
+  or, if personal keys are enabled, as a personal key in *My AI keys* (user preferences).
+* **Demo credentials:** Not applicable — no credentials are required to install or use the hub;
+  every AI feature stays inert until a key is configured.
+
+Full disclosure, including exact model ids and data destinations:
 [Third-party Service Disclosure](https://jeanlucio.github.io/moodle-local_aihub/#third-party-disclosure).
 
 ### 📦 Requirements
@@ -34,7 +45,7 @@ a provider on its own. Full disclosure, including exact model ids and data desti
 | Moodle    | 4.5+    |
 | PHP       | 8.1+    |
 
-### 🛠️ Installation
+### 🛠️ Installation & Configuration
 
 1. Download the `.zip` file or clone this repository.
 2. Extract the folder into your Moodle `local/` directory.
@@ -42,6 +53,12 @@ a provider on its own. Full disclosure, including exact model ids and data desti
    Final path:
    `your-moodle/local/aihub/`
 4. Visit **Site administration > Notifications** to complete installation.
+
+Configuring a provider key is optional — the plugin installs and works without one, simply
+reporting that no source is available to any consumer plugin. To enable AI generation, set a
+site key at **Site administration > Plugins > Local plugins > AI Hub**, as covered in the
+[Usage](https://jeanlucio.github.io/moodle-local_aihub/#usage) section of the full
+documentation.
 
 ### 🆘 Support
 
@@ -75,7 +92,19 @@ A **Central de IA** é um pequeno intermediário **BYOK (traga sua própria chav
 Uma chave de API é **opcional** e o plugin instala e funciona sem nenhuma. Quando uma chave está
 configurada e uma geração é solicitada, o texto do prompt é enviado ao provedor correspondente
 (Gemini, Groq, DeepSeek, ou o endpoint compatível com OpenAI configurado) — o hub nunca contata um
-provedor por conta própria. Divulgação completa, com os ids de modelo exatos e destinos dos dados:
+provedor por conta própria.
+
+* **Custo:** Nenhum é exigido para instalar ou usar o hub em si. Gemini, Groq e DeepSeek
+  atualmente oferecem camadas gratuitas de uso ou créditos de teste (políticas de preço podem
+  mudar); qualquer custo além disso é definido inteiramente pelo provedor escolhido.
+* **Chaves de API:** Não são fornecidas pelo hub. Obtenha uma chave diretamente no site do
+  provedor e configure-a como chave de site em **Administração do site > Plugins > Plugins
+  locais > AI Hub**, ou, se as chaves pessoais estiverem habilitadas, como chave pessoal em
+  *Minhas chaves de IA* (preferências do usuário).
+* **Credenciais de demonstração:** Não aplicável — nenhuma credencial é exigida para instalar ou
+  usar o hub; todo recurso de IA fica inerte até que uma chave seja configurada.
+
+Divulgação completa, com os ids de modelo exatos e destinos dos dados:
 [Divulgação de Serviço de Terceiros](https://jeanlucio.github.io/moodle-local_aihub/pt.html#third-party-disclosure).
 
 ### 📦 Requisitos
@@ -85,7 +114,7 @@ provedor por conta própria. Divulgação completa, com os ids de modelo exatos 
 | Moodle     | 4.5+   |
 | PHP        | 8.1+   |
 
-### 🛠️ Instalação
+### 🛠️ Instalação e Configuração
 
 1. Baixe o arquivo `.zip` ou clone este repositório.
 2. Extraia a pasta para o diretório `local/` do seu Moodle.
@@ -93,6 +122,13 @@ provedor por conta própria. Divulgação completa, com os ids de modelo exatos 
    Caminho final:
    `seu-moodle/local/aihub/`
 4. Acesse **Administração do site > Notificações** para concluir a instalação.
+
+Configurar uma chave de provedor é opcional — o plugin instala e funciona sem nenhuma, apenas
+informando que nenhuma fonte está disponível para os plugins consumidores. Para habilitar a
+geração por IA, defina uma chave de site em **Administração do site > Plugins > Plugins locais
+> AI Hub**, conforme explicado na seção
+[Como Usar](https://jeanlucio.github.io/moodle-local_aihub/pt.html#usage) da documentação
+completa.
 
 ### 🆘 Suporte
 
