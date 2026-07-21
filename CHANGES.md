@@ -4,6 +4,18 @@ All notable changes to this plugin are documented here.
 
 ---
 
+## [v1.2.1] — 2026-07-21
+
+### Fixed
+- Administrator usage report: the DeepSeek icon was missing from the report's provider
+  icon list, so DeepSeek-served requests showed no provider icon.
+
+### Changed
+- Replaced the plugin icon with a diagram glyph that better represents what the plugin
+  does.
+
+---
+
 ## [v1.2.0] — 2026-07-20
 
 ### Added
