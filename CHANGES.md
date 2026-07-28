@@ -4,6 +4,31 @@ All notable changes to this plugin are documented here.
 
 ---
 
+## [v1.3.0] — 2026-07-28
+
+### Added
+- Failed provider calls are now recorded, with the reason the provider itself gave. A
+  request that falls through to another provider leaves one row per attempt, so a key that
+  has stopped working no longer hides behind whichever provider answered it.
+- Filters on the administrator usage report: all attempts, failures only, or successes only.
+- An outcome column on the usage report and on the user's own history, showing the reason
+  under a failed attempt. Both CSV and Excel exports carry the same two columns.
+
+### Changed
+- The usage log records one row per **provider call** rather than one per request. A single
+  generation that tried two providers therefore appears twice, once for each.
+- `\local_aihub\ai::report_usage()` accepts the outcome and a failure reason, so a consumer
+  that resolves a hub key itself can report its failures too. Both arguments are optional
+  and default to a success, leaving existing callers unaffected.
+
+### Fixed
+- Requests made outside a user session (cron or a CLI script) showed a bare `0` in the
+  report's user column; they are now attributed to the system.
+- The usage log's privacy metadata declared seven of its eight columns; it now declares
+  every column it stores, including the outcome and the failure reason.
+
+---
+
 ## [v1.2.1] — 2026-07-21
 
 ### Fixed
