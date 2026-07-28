@@ -28,10 +28,16 @@ Feature: Review AI usage served by the site keys
     Then I should see "Gemini: quota exceeded"
     And I should not see "openai/gpt-oss-120b"
 
+  Scenario: The successes filter hides the attempts that failed
+    When I follow "Only successes"
+    Then I should see "openai/gpt-oss-120b"
+    And I should not see "Gemini: quota exceeded"
+
   Scenario: The filter returns to the full list
     Given I follow "Only failures"
     When I follow "All attempts"
     Then I should see "openai/gpt-oss-120b"
+    And I should see "Gemini: quota exceeded"
 
   Scenario: A request made outside a session is attributed rather than shown as an id
     Given the following AI usage entries exist:

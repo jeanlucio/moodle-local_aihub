@@ -79,15 +79,15 @@ class usage_log {
      *
      * @param int $userid The user whose entries are fetched.
      * @param int $limit Maximum number of rows to return.
-     * @param bool $onlyfailures Whether to restrict the list to failed attempts.
+     * @param bool|null $success Restrict to failed (false) or successful (true) attempts; null for both.
      * @return array Array of record objects.
      */
-    public static function get_recent_for_user(int $userid, int $limit = 15, bool $onlyfailures = false): array {
+    public static function get_recent_for_user(int $userid, int $limit = 15, ?bool $success = null): array {
         global $DB;
 
         $conditions = ['userid' => $userid];
-        if ($onlyfailures) {
-            $conditions['success'] = 0;
+        if ($success !== null) {
+            $conditions['success'] = $success ? 1 : 0;
         }
 
         return $DB->get_records(
@@ -121,15 +121,15 @@ class usage_log {
      * Returns the most recent requests served by the site keys, across all users.
      *
      * @param int $limit Maximum number of rows to return.
-     * @param bool $onlyfailures Whether to restrict the list to failed attempts.
+     * @param bool|null $success Restrict to failed (false) or successful (true) attempts; null for both.
      * @return array Array of record objects.
      */
-    public static function get_recent_site(int $limit = 50, bool $onlyfailures = false): array {
+    public static function get_recent_site(int $limit = 50, ?bool $success = null): array {
         global $DB;
 
         $conditions = ['keysource' => 'site'];
-        if ($onlyfailures) {
-            $conditions['success'] = 0;
+        if ($success !== null) {
+            $conditions['success'] = $success ? 1 : 0;
         }
 
         return $DB->get_records(

@@ -84,11 +84,12 @@ final class usage_log_test extends \advanced_testcase {
     }
 
     /**
-     * The failures-only filter narrows both readers without touching the default.
+     * The outcome filter narrows both readers in either direction, and omitting it
+     * still returns everything.
      *
      * @return void
      */
-    public function test_only_failures_filter(): void {
+    public function test_outcome_filter(): void {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();
 
@@ -98,13 +99,21 @@ final class usage_log_test extends \advanced_testcase {
         $this->assertCount(2, usage_log::get_recent_site());
         $this->assertCount(2, usage_log::get_recent_for_user((int) $user->id));
 
-        $failures = usage_log::get_recent_site(50, true);
+        $failures = usage_log::get_recent_site(50, false);
         $this->assertCount(1, $failures);
         $this->assertSame('Gemini', reset($failures)->provider);
 
-        $userfailures = usage_log::get_recent_for_user((int) $user->id, 15, true);
+        $successes = usage_log::get_recent_site(50, true);
+        $this->assertCount(1, $successes);
+        $this->assertSame('Groq', reset($successes)->provider);
+
+        $userfailures = usage_log::get_recent_for_user((int) $user->id, 15, false);
         $this->assertCount(1, $userfailures);
         $this->assertSame('Gemini: down', reset($userfailures)->errormessage);
+
+        $usersuccesses = usage_log::get_recent_for_user((int) $user->id, 15, true);
+        $this->assertCount(1, $usersuccesses);
+        $this->assertSame('Groq', reset($usersuccesses)->provider);
     }
 
     /**

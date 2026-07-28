@@ -119,11 +119,44 @@ final class report_test extends \advanced_testcase {
     }
 
     /**
-     * The failures-only view narrows the rows and swaps the empty-state wording.
+     * Each filter narrows to its own outcome, and an empty result says which
+     * question came back empty rather than reporting the log as unused.
      *
      * @return void
      */
-    public function test_only_failures_view(): void {
+    public function test_each_filter_narrows_to_its_own_outcome(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        usage_log::record((int) $user->id, 'mod_codereview', 'Review', 'Gemini', 'flash', false, 'site', 'Gemini: down');
+        usage_log::record((int) $user->id, 'mod_codereview', 'Review', 'Groq', 'llama', true, 'site');
+
+        $output = $PAGE->get_renderer('core');
+
+        $all = (new report())->export_for_template($output);
+        $this->assertCount(2, $all['rows']);
+
+        $failures = (new report('failures'))->export_for_template($output);
+        $this->assertCount(1, $failures['rows']);
+        $this->assertSame('Gemini', $failures['rows'][0]['provider']);
+
+        $successes = (new report('successes'))->export_for_template($output);
+        $this->assertCount(1, $successes['rows']);
+        $this->assertSame('Groq', $successes['rows'][0]['provider']);
+
+        // Exactly one filter reads as active, and it is the requested one.
+        $active = array_values(array_filter($successes['filters'], static fn($f) => $f['active']));
+        $this->assertCount(1, $active);
+        $this->assertSame(get_string('report_filter_successes', 'local_aihub'), $active[0]['label']);
+    }
+
+    /**
+     * An empty filtered view names the outcome it found none of.
+     *
+     * @return void
+     */
+    public function test_empty_state_is_per_filter(): void {
         global $PAGE;
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();
@@ -131,11 +164,33 @@ final class report_test extends \advanced_testcase {
         usage_log::record((int) $user->id, 'mod_codereview', 'Review', 'Groq', 'llama', true, 'site');
 
         $output = $PAGE->get_renderer('core');
-        $context = (new report(true))->export_for_template($output);
 
-        $this->assertTrue($context['onlyfailures']);
+        $failures = (new report('failures'))->export_for_template($output);
+        $this->assertFalse($failures['hasrows']);
+        $this->assertSame(get_string('report_nofailures', 'local_aihub'), $failures['empty']);
+
+        $successes = (new report('nonsense'))->export_for_template($output);
+        // An unrecognised filter reads as the unfiltered list rather than as empty.
+        $this->assertTrue($successes['hasrows']);
+    }
+
+    /**
+     * With nothing successful logged, the successes view says so.
+     *
+     * @return void
+     */
+    public function test_empty_successes_view(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        usage_log::record((int) $user->id, 'mod_codereview', 'Review', 'Gemini', 'flash', false, 'site', 'Gemini: down');
+
+        $output = $PAGE->get_renderer('core');
+        $context = (new report('successes'))->export_for_template($output);
+
         $this->assertFalse($context['hasrows']);
-        $this->assertSame(get_string('report_nofailures', 'local_aihub'), $context['empty']);
+        $this->assertSame(get_string('report_nosuccesses', 'local_aihub'), $context['empty']);
     }
 
     /**

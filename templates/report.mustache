@@ -30,11 +30,7 @@
     * modellabel string Column header for model
     * datelabel string Column header for date
     * statuslabel string Column header for the attempt outcome
-    * onlyfailures boolean Whether the list is currently restricted to failures
-    * showallurl string URL of the unfiltered list
-    * onlyfailuresurl string URL of the failures-only list
-    * showalllabel string Label of the unfiltered filter option
-    * onlyfailureslabel string Label of the failures-only filter option
+    * filters array Filter links (label, url, active)
     * hasrows boolean Whether there is any usage
     * rows array Usage rows (user, component, description, provider, providericon, model, failed, statuslabel, errormessage, date)
     * downloadcsvurl string URL to download the report as CSV
@@ -53,11 +49,11 @@
         "modellabel": "Model",
         "datelabel": "Date",
         "statuslabel": "Status",
-        "onlyfailures": false,
-        "showallurl": "https://example.com/local/aihub/report.php",
-        "onlyfailuresurl": "https://example.com/local/aihub/report.php?onlyfailures=1",
-        "showalllabel": "All attempts",
-        "onlyfailureslabel": "Only failures",
+        "filters": [
+            {"label": "All attempts", "url": "https://example.com/local/aihub/report.php", "active": true},
+            {"label": "Only failures", "url": "https://example.com/local/aihub/report.php?filter=failures", "active": false},
+            {"label": "Only successes", "url": "https://example.com/local/aihub/report.php?filter=successes", "active": false}
+        ],
         "hasrows": true,
         "rows": [
             {"user": "Ada Lovelace", "component": "local_playergames", "description": "Concepts: History of Brazil",
@@ -74,12 +70,12 @@
     <p>{{intro}}</p>
 
     <ul class="nav nav-pills mb-3">
-        <li class="nav-item">
-            <a class="nav-link {{^onlyfailures}}active{{/onlyfailures}}" href="{{showallurl}}">{{showalllabel}}</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {{#onlyfailures}}active{{/onlyfailures}}" href="{{onlyfailuresurl}}">{{onlyfailureslabel}}</a>
-        </li>
+        {{#filters}}
+            <li class="nav-item">
+                <a class="nav-link {{#active}}active{{/active}}" href="{{url}}"
+                   {{#active}}aria-current="page"{{/active}}>{{label}}</a>
+            </li>
+        {{/filters}}
     </ul>
 
     {{#hasrows}}
