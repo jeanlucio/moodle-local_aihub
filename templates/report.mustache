@@ -29,8 +29,14 @@
     * providerlabel string Column header for provider
     * modellabel string Column header for model
     * datelabel string Column header for date
+    * statuslabel string Column header for the attempt outcome
+    * onlyfailures boolean Whether the list is currently restricted to failures
+    * showallurl string URL of the unfiltered list
+    * onlyfailuresurl string URL of the failures-only list
+    * showalllabel string Label of the unfiltered filter option
+    * onlyfailureslabel string Label of the failures-only filter option
     * hasrows boolean Whether there is any usage
-    * rows array Usage rows (user, component, description, provider, providericon, model, date)
+    * rows array Usage rows (user, component, description, provider, providericon, model, failed, statuslabel, errormessage, date)
     * downloadcsvurl string URL to download the report as CSV
     * downloadexcelurl string URL to download the report as Excel
     * downloadcsvlabel string Label for the CSV download button
@@ -46,10 +52,17 @@
         "providerlabel": "Provider",
         "modellabel": "Model",
         "datelabel": "Date",
+        "statuslabel": "Status",
+        "onlyfailures": false,
+        "showallurl": "https://example.com/local/aihub/report.php",
+        "onlyfailuresurl": "https://example.com/local/aihub/report.php?onlyfailures=1",
+        "showalllabel": "All attempts",
+        "onlyfailureslabel": "Only failures",
         "hasrows": true,
         "rows": [
             {"user": "Ada Lovelace", "component": "local_playergames", "description": "Concepts: History of Brazil",
-             "provider": "Gemini", "providericon": "fa-google", "model": "gemini-flash-latest", "date": "1 Jan 2026"}
+             "provider": "Gemini", "providericon": "fa-google", "model": "gemini-flash-latest",
+             "failed": true, "statuslabel": "Failed", "errormessage": "Gemini: quota exceeded", "date": "1 Jan 2026"}
         ],
         "downloadcsvurl": "https://example.com/local/aihub/report.php?download=csv",
         "downloadexcelurl": "https://example.com/local/aihub/report.php?download=excel",
@@ -60,31 +73,52 @@
 <div class="local-aihub-report">
     <p>{{intro}}</p>
 
+    <ul class="nav nav-pills mb-3">
+        <li class="nav-item">
+            <a class="nav-link {{^onlyfailures}}active{{/onlyfailures}}" href="{{showallurl}}">{{showalllabel}}</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{#onlyfailures}}active{{/onlyfailures}}" href="{{onlyfailuresurl}}">{{onlyfailureslabel}}</a>
+        </li>
+    </ul>
+
     {{#hasrows}}
-        <table class="table table-sm">
-            <thead>
-                <tr>
-                    <th scope="col">{{userlabel}}</th>
-                    <th scope="col">{{componentlabel}}</th>
-                    <th scope="col">{{actionlabel}}</th>
-                    <th scope="col">{{providerlabel}}</th>
-                    <th scope="col">{{modellabel}}</th>
-                    <th scope="col">{{datelabel}}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{#rows}}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
                     <tr>
-                        <td>{{user}}</td>
-                        <td>{{component}}</td>
-                        <td>{{description}}</td>
-                        <td><i class="fa {{providericon}}" aria-hidden="true"></i> {{provider}}</td>
-                        <td>{{model}}</td>
-                        <td>{{date}}</td>
+                        <th scope="col">{{userlabel}}</th>
+                        <th scope="col">{{componentlabel}}</th>
+                        <th scope="col">{{actionlabel}}</th>
+                        <th scope="col">{{providerlabel}}</th>
+                        <th scope="col">{{modellabel}}</th>
+                        <th scope="col">{{statuslabel}}</th>
+                        <th scope="col">{{datelabel}}</th>
                     </tr>
-                {{/rows}}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {{#rows}}
+                        <tr>
+                            <td>{{user}}</td>
+                            <td>{{component}}</td>
+                            <td>{{description}}</td>
+                            <td><i class="fa {{providericon}}" aria-hidden="true"></i> {{provider}}</td>
+                            <td>{{model}}</td>
+                            <td>
+                                {{#failed}}
+                                    <span class="badge bg-danger">{{statuslabel}}</span>
+                                    <div class="small">{{errormessage}}</div>
+                                {{/failed}}
+                                {{^failed}}
+                                    <span class="badge bg-success">{{statuslabel}}</span>
+                                {{/failed}}
+                            </td>
+                            <td>{{date}}</td>
+                        </tr>
+                    {{/rows}}
+                </tbody>
+            </table>
+        </div>
         <div class="d-flex">
             <a href="{{downloadcsvurl}}" class="btn btn-outline-secondary btn-sm me-2">
                 <i class="fa fa-download" aria-hidden="true"></i> {{downloadcsvlabel}}

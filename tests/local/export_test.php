@@ -51,13 +51,34 @@ final class export_test extends \advanced_testcase {
 
         [$columns, $rows] = export::build((int) $user->id);
 
-        // Five columns, and every one of the user's rows (not capped at 15).
-        $this->assertCount(5, $columns);
+        // Seven columns, and every one of the user's rows (not capped at 15).
+        $this->assertCount(7, $columns);
         $this->assertCount(20, $rows);
-        $this->assertCount(5, $rows[0]);
+        $this->assertCount(7, $rows[0]);
         $this->assertSame('local_playergames', $rows[0][0]);
         $this->assertSame('Concepts: test', $rows[0][1]);
         $this->assertSame('Gemini', $rows[0][2]);
+        $this->assertSame(get_string('report_succeeded', 'local_aihub'), $rows[0][4]);
+        $this->assertSame('', $rows[0][5]);
+    }
+
+    /**
+     * A failed attempt exports its outcome and reason rather than looking like a
+     * successful one with missing data.
+     *
+     * @covers ::build
+     * @return void
+     */
+    public function test_build_exports_a_failure(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        usage_log::record((int) $user->id, 'mod_codereview', 'Review', 'Gemini', 'flash', false, 'site', 'Gemini: down');
+
+        [, $rows] = export::build((int) $user->id);
+
+        $this->assertSame(get_string('report_failed', 'local_aihub'), $rows[0][4]);
+        $this->assertSame('Gemini: down', $rows[0][5]);
     }
 
     /**
@@ -78,10 +99,10 @@ final class export_test extends \advanced_testcase {
 
         [$columns, $rows] = export::build_site();
 
-        // Six columns (user first) and only the two site-key rows.
-        $this->assertCount(6, $columns);
+        // Eight columns (user first) and only the two site-key rows.
+        $this->assertCount(8, $columns);
         $this->assertCount(2, $rows);
-        $this->assertCount(6, $rows[0]);
+        $this->assertCount(8, $rows[0]);
 
         $names = array_column($rows, 0);
         $this->assertContains(fullname($user), $names);

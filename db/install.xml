@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/aihub/db" VERSION="20260628"
+<XMLDB PATH="local/aihub/db" VERSION="20260728"
     COMMENT="XMLDB file for Moodle local/aihub"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
@@ -14,6 +14,7 @@
         <FIELD NAME="model" TYPE="char" LENGTH="100" NOTNULL="false"/>
         <FIELD NAME="keysource" TYPE="char" LENGTH="20" NOTNULL="false" COMMENT="Which key tier served the request: personal or site"/>
         <FIELD NAME="success" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
+        <FIELD NAME="errormessage" TYPE="char" LENGTH="255" NOTNULL="false" COMMENT="Why a failed attempt failed; null on a successful one"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
       </FIELDS>
       <KEYS>

@@ -76,4 +76,76 @@ final class report_test extends \advanced_testcase {
         $this->assertFalse($context['hasrows']);
         $this->assertSame([], $context['rows']);
     }
+
+    /**
+     * A failed attempt is marked as such and carries its reason; a successful one
+     * carries neither, so the reason column stays empty rather than stale.
+     *
+     * @covers ::export_for_template
+     * @covers ::log_rows
+     * @return void
+     */
+    public function test_failed_rows_carry_their_reason(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        usage_log::record((int) $user->id, 'mod_codereview', 'Review', 'Gemini', 'flash', false, 'site', 'Gemini: down');
+        usage_log::record((int) $user->id, 'mod_codereview', 'Review', 'Groq', 'llama', true, 'site');
+
+        $output = $PAGE->get_renderer('core');
+        $context = (new report())->export_for_template($output);
+
+        $this->assertCount(2, $context['rows']);
+
+        $byprovider = array_column($context['rows'], null, 'provider');
+        $this->assertTrue($byprovider['Gemini']['failed']);
+        $this->assertSame('Gemini: down', $byprovider['Gemini']['errormessage']);
+        $this->assertFalse($byprovider['Groq']['failed']);
+        $this->assertSame('', $byprovider['Groq']['errormessage']);
+    }
+
+    /**
+     * The failures-only view narrows the rows and swaps the empty-state wording.
+     *
+     * @covers ::export_for_template
+     * @covers ::log_rows
+     * @return void
+     */
+    public function test_only_failures_view(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        usage_log::record((int) $user->id, 'mod_codereview', 'Review', 'Groq', 'llama', true, 'site');
+
+        $output = $PAGE->get_renderer('core');
+        $context = (new report(true))->export_for_template($output);
+
+        $this->assertTrue($context['onlyfailures']);
+        $this->assertFalse($context['hasrows']);
+        $this->assertSame(get_string('report_nofailures', 'local_aihub'), $context['empty']);
+    }
+
+    /**
+     * The page renders end to end with no unresolved string placeholders.
+     *
+     * @covers ::export_for_template
+     * @return void
+     */
+    public function test_template_renders(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $PAGE->set_url('/local/aihub/report.php');
+        $user = $this->getDataGenerator()->create_user();
+
+        usage_log::record((int) $user->id, 'mod_codereview', 'Review', 'Gemini', 'flash', false, 'site', 'Gemini: down');
+
+        $output = $PAGE->get_renderer('local_aihub');
+        $html = $output->render(new report());
+
+        $this->assertStringNotContainsString('[[', $html);
+        $this->assertStringContainsString('Gemini: down', $html);
+        $this->assertStringContainsString('bg-danger', $html);
+    }
 }

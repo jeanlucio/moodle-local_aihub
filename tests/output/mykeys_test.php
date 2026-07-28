@@ -96,4 +96,28 @@ final class mykeys_test extends \advanced_testcase {
         $this->assertSame('fa-search', $icons['DeepSeek']);
         $this->assertSame('fa-cog', $icons['SomeFutureProvider']);
     }
+
+    /**
+     * A user sees why their own key failed, not just that something happened.
+     *
+     * @covers ::export_for_template
+     * @covers ::log_rows
+     * @return void
+     */
+    public function test_log_rows_show_a_failure_reason(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+
+        usage_log::record((int) $user->id, 'mod_codereview', 'Review', 'Gemini', '', false, 'personal', 'Gemini: invalid key');
+
+        $output = $PAGE->get_renderer('core');
+        $context = (new mykeys((int) $user->id))->export_for_template($output);
+
+        $row = $context['logrows'][0];
+        $this->assertTrue($row['failed']);
+        $this->assertSame('Gemini: invalid key', $row['errormessage']);
+        $this->assertSame(get_string('report_failed', 'local_aihub'), $row['statuslabel']);
+    }
 }

@@ -28,8 +28,8 @@ namespace local_aihub\local;
  * Resolves a BYOK key and generates text against the matching provider.
  *
  * Tier order is personal keys (when allowed) then site keys; within a tier the
- * provider order is Gemini then Groq then OpenAI-compatible. On a provider failure
- * the next available one is tried. core_ai is never consulted here.
+ * provider order is Gemini then Groq then DeepSeek then OpenAI-compatible. On a
+ * provider failure the next available one is tried. core_ai is never consulted here.
  *
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
@@ -46,7 +46,8 @@ class client {
      * @param string $user User prompt text.
      * @param bool $jsonmode Whether to request structured JSON output.
      * @param int|null $userid User whose personal tier is tried first. Defaults to $USER->id.
-     * @return array Keys: success (bool), data (string), provider (string), model (string), keysource (string), message (string).
+     * @return array Keys: success (bool), data (string), provider (string), model (string),
+     *               keysource (string), message (string), attempts (array).
      */
     public function generate_text(string $system, string $user, bool $jsonmode = false, ?int $userid = null): array {
         global $USER;
@@ -54,25 +55,30 @@ class client {
         $userid = $userid ?? (int) $USER->id;
         $lasterror = ['success' => false, 'data' => '', 'provider' => '', 'model' => '', 'message' => ''];
 
+        // Every provider call is kept, not just the winning one. A failure that is
+        // followed by a success would otherwise be overwritten and lost, which is
+        // exactly the case that hides a permanently broken key from the log.
+        $attempts = [];
+
         // Tier 1: personal keys (the user's own, opt-in).
         if (keys::personal_keys_allowed($userid)) {
-            $result = $this->try_key_tier($system, $user, $jsonmode, true, $userid, $lasterror);
+            $result = $this->try_key_tier($system, $user, $jsonmode, true, $userid, $lasterror, $attempts);
             if ($result !== null) {
-                return $result;
+                return $result + ['attempts' => $attempts];
             }
         }
 
         // Tier 2: site keys (admin-wide).
-        $result = $this->try_key_tier($system, $user, $jsonmode, false, $userid, $lasterror);
+        $result = $this->try_key_tier($system, $user, $jsonmode, false, $userid, $lasterror, $attempts);
         if ($result !== null) {
-            return $result;
+            return $result + ['attempts' => $attempts];
         }
 
-        return $lasterror;
+        return $lasterror + ['attempts' => $attempts];
     }
 
     /**
-     * Tries Gemini then Groq then OpenAI for a single key tier (personal or site).
+     * Tries Gemini then Groq then DeepSeek then OpenAI for one key tier (personal or site).
      *
      * @param string $system System instruction (may be empty).
      * @param string $user User prompt text.
@@ -80,6 +86,7 @@ class client {
      * @param bool $personal True for the personal-key tier, false for the site-key tier.
      * @param int $userid User whose personal keys are read in the personal tier.
      * @param array $lasterror Updated in place with the last failing provider result.
+     * @param array $attempts Appended to in place with one entry per provider called.
      * @return array|null A successful result, or null when no provider in this tier succeeded.
      */
     protected function try_key_tier(
@@ -88,7 +95,8 @@ class client {
         bool $jsonmode,
         bool $personal,
         int $userid,
-        array &$lasterror
+        array &$lasterror,
+        array &$attempts
     ): ?array {
         $keysource = $personal ? 'personal' : 'site';
         $key = function (string $provider) use ($personal, $userid): string {
@@ -100,6 +108,7 @@ class client {
         $geminikey = $key(keys::PROVIDER_GEMINI);
         if ($geminikey !== '') {
             $result = $this->call_gemini($system, $user, $geminikey, $jsonmode);
+            $attempts[] = $this->attempt($result, $keysource);
             if ($result['success']) {
                 return $result + ['keysource' => $keysource];
             }
@@ -109,6 +118,7 @@ class client {
         $groqkey = $key(keys::PROVIDER_GROQ);
         if ($groqkey !== '') {
             $result = $this->call_groq($system, $user, $groqkey, $jsonmode);
+            $attempts[] = $this->attempt($result, $keysource);
             if ($result['success']) {
                 return $result + ['keysource' => $keysource];
             }
@@ -118,6 +128,7 @@ class client {
         $deepseekkey = $key(keys::PROVIDER_DEEPSEEK);
         if ($deepseekkey !== '') {
             $result = $this->call_deepseek($system, $user, $deepseekkey, $jsonmode);
+            $attempts[] = $this->attempt($result, $keysource);
             if ($result['success']) {
                 return $result + ['keysource' => $keysource];
             }
@@ -144,6 +155,7 @@ class client {
             $openaiurl = $this->resolve_openai_url($rawurl);
             if ($this->is_safe_url($openaiurl)) {
                 $result = $this->call_openai_compatible($system, $user, $openaikey, $openaiurl, $model, $jsonmode);
+                $attempts[] = $this->attempt($result, $keysource);
                 if ($result['success']) {
                     return $result + ['keysource' => $keysource];
                 }
@@ -152,6 +164,23 @@ class client {
         }
 
         return null;
+    }
+
+    /**
+     * Reduces a provider result to the fields the usage log stores.
+     *
+     * @param array $result The array a call_* method returned.
+     * @param string $keysource Which key tier was used: personal or site.
+     * @return array
+     */
+    protected function attempt(array $result, string $keysource): array {
+        return [
+            'provider' => (string) ($result['provider'] ?? ''),
+            'model' => (string) ($result['model'] ?? ''),
+            'keysource' => $keysource,
+            'success' => !empty($result['success']),
+            'message' => (string) ($result['message'] ?? ''),
+        ];
     }
 
     /**

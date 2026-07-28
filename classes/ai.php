@@ -55,7 +55,8 @@ class ai {
      * @param string $component Frankenstyle of the calling plugin, for the usage log.
      * @param string $description Short label of what is being generated, for the usage log.
      * @param int|null $userid User whose personal keys are tried first. Defaults to $USER->id.
-     * @return array Keys: success (bool), data (string), provider (string), model (string), keysource (string), message (string).
+     * @return array Keys: success (bool), data (string), provider (string), model (string),
+     *               keysource (string), message (string), attempts (array).
      */
     public static function generate_text(
         string $system,
@@ -71,15 +72,19 @@ class ai {
         $client = self::$clientoverride ?? new client();
         $result = $client->generate_text($system, $user, $jsonmode, $userid);
 
-        if (!empty($result['success'])) {
+        // One row per provider called, not one per request. A provider that always
+        // fails is invisible when only the winner is logged: the chain quietly moves
+        // on and the report reads as if nothing went wrong.
+        foreach (($result['attempts'] ?? []) as $attempt) {
             usage_log::record(
                 $userid,
                 $component,
                 $description,
-                (string) ($result['provider'] ?? ''),
-                (string) ($result['model'] ?? ''),
-                true,
-                (string) ($result['keysource'] ?? '')
+                (string) ($attempt['provider'] ?? ''),
+                (string) ($attempt['model'] ?? ''),
+                !empty($attempt['success']),
+                (string) ($attempt['keysource'] ?? ''),
+                (string) ($attempt['message'] ?? '')
             );
         }
 
@@ -95,12 +100,18 @@ class ai {
      * use of a hub key to show up in the site usage report. Consumers that can use
      * generate_text() directly should prefer it: it logs automatically.
      *
+     * What lands here is what the caller declares, not what the hub observed. A
+     * consumer that only calls this on success leaves no trace of its failures, so
+     * the absence of failed rows for a component is not evidence that it has none.
+     *
      * @param int $userid The user who requested the generation.
      * @param string $component Frankenstyle of the calling plugin.
      * @param string $description Short label of what was generated (may be empty).
      * @param string $provider Provider display name (Gemini, Groq, OpenAI).
      * @param string $model Model identifier used (may be empty).
      * @param string $keysource Which hub tier served the request: 'personal' or 'site'.
+     * @param bool $success Whether the generation succeeded.
+     * @param string $errormessage Why it failed, when it did (may be empty).
      * @return void
      */
     public static function report_usage(
@@ -109,9 +120,11 @@ class ai {
         string $description,
         string $provider,
         string $model,
-        string $keysource
+        string $keysource,
+        bool $success = true,
+        string $errormessage = ''
     ): void {
-        usage_log::record($userid, $component, $description, $provider, $model, true, $keysource);
+        usage_log::record($userid, $component, $description, $provider, $model, $success, $keysource, $errormessage);
     }
 
     /**

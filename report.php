@@ -45,5 +45,5 @@ $output = $PAGE->get_renderer('local_aihub');
 
 echo $output->header();
 echo $output->heading(get_string('report_title', 'local_aihub'));
-echo $output->render(new report());
+echo $output->render(new report((bool) optional_param('onlyfailures', 0, PARAM_BOOL)));
 echo $output->footer();

@@ -47,6 +47,8 @@ class export {
             get_string('mykeys_log_action', 'local_aihub'),
             get_string('mykeys_log_provider', 'local_aihub'),
             get_string('mykeys_log_model', 'local_aihub'),
+            get_string('report_status', 'local_aihub'),
+            get_string('report_errormessage', 'local_aihub'),
             get_string('mykeys_log_date', 'local_aihub'),
         ];
 
@@ -58,6 +60,8 @@ class export {
                 (string) ($record->description ?? ''),
                 $record->provider,
                 (string) ($record->model ?? ''),
+                self::status_label($record),
+                (string) ($record->errormessage ?? ''),
                 userdate($record->timecreated, $datetimeformat),
             ];
         }
@@ -93,6 +97,8 @@ class export {
             get_string('mykeys_log_action', 'local_aihub'),
             get_string('mykeys_log_provider', 'local_aihub'),
             get_string('mykeys_log_model', 'local_aihub'),
+            get_string('report_status', 'local_aihub'),
+            get_string('report_errormessage', 'local_aihub'),
             get_string('mykeys_log_date', 'local_aihub'),
         ];
 
@@ -108,11 +114,25 @@ class export {
                 (string) ($record->description ?? ''),
                 $record->provider,
                 (string) ($record->model ?? ''),
+                self::status_label($record),
+                (string) ($record->errormessage ?? ''),
                 userdate($record->timecreated, $datetimeformat),
             ];
         }
 
         return [$columns, $rows];
+    }
+
+    /**
+     * Returns the translated outcome of a logged attempt.
+     *
+     * @param \stdClass $record A usage log record.
+     * @return string
+     */
+    private static function status_label(\stdClass $record): string {
+        return empty($record->success)
+            ? get_string('report_failed', 'local_aihub')
+            : get_string('report_succeeded', 'local_aihub');
     }
 
     /**

@@ -101,12 +101,12 @@ final class ai_test extends \advanced_testcase {
     }
 
     /**
-     * A failed generation (no key resolves) writes no log row.
+     * With no key configured no provider is ever called, so there is nothing to log.
      *
      * @covers ::generate_text
      * @return void
      */
-    public function test_generate_text_does_not_log_on_failure(): void {
+    public function test_generate_text_does_not_log_when_no_provider_is_called(): void {
         global $DB;
         $this->resetAfterTest();
         $this->setAdminUser();
@@ -118,6 +118,53 @@ final class ai_test extends \advanced_testcase {
 
         $this->assertFalse($result['success']);
         $this->assertSame(0, $DB->count_records(usage_log::TABLE));
+    }
+
+    /**
+     * Every provider called is logged, not just the one that answered.
+     *
+     * This is the case the log used to hide: a provider that fails is covered by
+     * whichever one succeeds next, so a permanently broken key leaves no trace.
+     *
+     * @covers ::generate_text
+     * @return void
+     */
+    public function test_generate_text_logs_a_failure_covered_by_a_later_success(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+
+        $client = new mock_client();
+        $client->results['Gemini'] = [
+            'success' => false,
+            'message' => 'Gemini: quota exceeded',
+            'provider' => 'Gemini',
+        ];
+        $client->results['Groq'] = [
+            'success' => true,
+            'data' => 'answer',
+            'provider' => 'Groq',
+            'model' => 'openai/gpt-oss-120b',
+        ];
+        ai::set_client_for_testing($client);
+
+        $result = ai::generate_text('', 'hello', false, 'local_playergames', 'Concepts: test');
+
+        $this->assertTrue($result['success']);
+
+        $rows = array_values($DB->get_records(usage_log::TABLE, null, 'id ASC'));
+        $this->assertCount(2, $rows);
+
+        $this->assertSame('Gemini', $rows[0]->provider);
+        $this->assertSame(0, (int) $rows[0]->success);
+        $this->assertSame('Gemini: quota exceeded', $rows[0]->errormessage);
+        $this->assertSame('local_playergames', $rows[0]->component);
+
+        $this->assertSame('Groq', $rows[1]->provider);
+        $this->assertSame(1, (int) $rows[1]->success);
+        $this->assertNull($rows[1]->errormessage);
     }
 
     /**
@@ -142,5 +189,34 @@ final class ai_test extends \advanced_testcase {
         $this->assertSame('Gemini', $row->provider);
         $this->assertSame('site', $row->keysource);
         $this->assertSame(1, (int) $row->success);
+    }
+
+    /**
+     * The same reporting path can record a failure, for a consumer willing to.
+     *
+     * @covers ::report_usage
+     * @return void
+     */
+    public function test_report_usage_can_record_a_failure(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        ai::report_usage(
+            (int) get_admin()->id,
+            'block_playerhud',
+            'item',
+            'Gemini',
+            '',
+            'site',
+            false,
+            'Gemini: invalid API key'
+        );
+
+        $rows = $DB->get_records(usage_log::TABLE);
+        $this->assertCount(1, $rows);
+        $row = reset($rows);
+        $this->assertSame(0, (int) $row->success);
+        $this->assertSame('Gemini: invalid API key', $row->errormessage);
     }
 }

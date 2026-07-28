@@ -42,8 +42,9 @@
     * logproviderlabel string Column header for provider
     * logmodellabel string Column header for model
     * logdatelabel string Column header for date
+    * logstatuslabel string Column header for the attempt outcome
     * loghasrows boolean Whether there is any history
-    * logrows array History rows (description, provider, providericon, model, date)
+    * logrows array History rows (description, provider, providericon, model, failed, statuslabel, errormessage, date)
     * downloadcsvurl string URL to download the full usage log as CSV
     * downloadexcelurl string URL to download the full usage log as Excel
     * downloadcsvlabel string Label for the CSV download button
@@ -76,10 +77,11 @@
         "logproviderlabel": "Provider",
         "logmodellabel": "Model",
         "logdatelabel": "Date",
+        "logstatuslabel": "Status",
         "logactionlabel": "What was done",
         "loghasrows": true,
         "logrows": [
-            {"description": "Concepts: History of Brazil", "provider": "Gemini", "providericon": "fa-google", "model": "gemini-flash-latest", "date": "1 Jan 2026"}
+            {"description": "Concepts: History of Brazil", "provider": "Gemini", "providericon": "fa-google", "model": "gemini-flash-latest", "failed": false, "statuslabel": "Succeeded", "errormessage": "", "date": "1 Jan 2026"}
         ],
         "downloadcsvurl": "https://example.com/local/aihub/mykeys.php?download=csv",
         "downloadexcelurl": "https://example.com/local/aihub/mykeys.php?download=excel",
@@ -146,6 +148,7 @@
                     <th scope="col">{{logactionlabel}}</th>
                     <th scope="col">{{logproviderlabel}}</th>
                     <th scope="col">{{logmodellabel}}</th>
+                    <th scope="col">{{logstatuslabel}}</th>
                     <th scope="col">{{logdatelabel}}</th>
                 </tr>
             </thead>
@@ -155,6 +158,15 @@
                         <td>{{description}}</td>
                         <td><i class="fa {{providericon}}" aria-hidden="true"></i> {{provider}}</td>
                         <td>{{model}}</td>
+                        <td>
+                            {{#failed}}
+                                <span class="badge bg-danger">{{statuslabel}}</span>
+                                <div class="small">{{errormessage}}</div>
+                            {{/failed}}
+                            {{^failed}}
+                                <span class="badge bg-success">{{statuslabel}}</span>
+                            {{/failed}}
+                        </td>
                         <td>{{date}}</td>
                     </tr>
                 {{/logrows}}

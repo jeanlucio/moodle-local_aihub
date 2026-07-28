@@ -237,5 +237,74 @@ final class client_test extends \advanced_testcase {
 
         $this->assertFalse($result['success']);
         $this->assertSame([], $client->calls);
+        $this->assertSame([], $result['attempts']);
+    }
+
+    /**
+     * Every provider called is reported back, including the ones that failed.
+     *
+     * A failure followed by a success used to be overwritten by the winning result
+     * and never reached the caller, which is what let a dead key stay invisible.
+     *
+     * @covers ::generate_text
+     * @covers ::try_key_tier
+     * @covers ::attempt
+     * @return void
+     */
+    public function test_attempts_keep_a_failure_covered_by_a_later_success(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+
+        $client = new mock_client();
+        $client->results['Gemini'] = ['success' => false, 'message' => 'Gemini: down', 'provider' => 'Gemini'];
+        $client->results['Groq'] = [
+            'success'  => true,
+            'data'     => 'ok',
+            'provider' => 'Groq',
+            'model'    => 'openai/gpt-oss-120b',
+        ];
+
+        $result = $client->generate_text('', 'hello');
+
+        $this->assertCount(2, $result['attempts']);
+
+        $this->assertSame('Gemini', $result['attempts'][0]['provider']);
+        $this->assertFalse($result['attempts'][0]['success']);
+        $this->assertSame('Gemini: down', $result['attempts'][0]['message']);
+        $this->assertSame('site', $result['attempts'][0]['keysource']);
+
+        $this->assertSame('Groq', $result['attempts'][1]['provider']);
+        $this->assertTrue($result['attempts'][1]['success']);
+        $this->assertSame('openai/gpt-oss-120b', $result['attempts'][1]['model']);
+    }
+
+    /**
+     * Attempts span both tiers, so a personal key that fails is not lost when a
+     * site key answers.
+     *
+     * @covers ::generate_text
+     * @covers ::try_key_tier
+     * @return void
+     */
+    public function test_attempts_span_both_key_tiers(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        set_config('enablepersonalkeys', 1, 'local_aihub');
+
+        keys::save_user_key(keys::PROVIDER_GEMINI, 'personal-gemini');
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+
+        $client = new mock_client();
+        $client->results['Gemini'] = ['success' => false, 'message' => 'Gemini: down', 'provider' => 'Gemini'];
+
+        $result = $client->generate_text('', 'hello');
+
+        $this->assertFalse($result['success']);
+        $this->assertCount(2, $result['attempts']);
+        $this->assertSame('personal', $result['attempts'][0]['keysource']);
+        $this->assertSame('site', $result['attempts'][1]['keysource']);
     }
 }

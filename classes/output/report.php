@@ -49,6 +49,18 @@ class report implements renderable, templatable {
         'OpenAI'   => 'fa-plug',
     ];
 
+    /** @var bool Whether the list is restricted to failed attempts. */
+    private bool $onlyfailures;
+
+    /**
+     * Constructor.
+     *
+     * @param bool $onlyfailures Whether to restrict the list to failed attempts.
+     */
+    public function __construct(bool $onlyfailures = false) {
+        $this->onlyfailures = $onlyfailures;
+    }
+
     /**
      * Exports the Mustache context for the report page.
      *
@@ -59,13 +71,24 @@ class report implements renderable, templatable {
         $rows = $this->log_rows();
         return [
             'intro'              => get_string('report_intro', 'local_aihub'),
-            'empty'              => get_string('report_empty', 'local_aihub'),
+            'empty'              => $this->onlyfailures
+                ? get_string('report_nofailures', 'local_aihub')
+                : get_string('report_empty', 'local_aihub'),
             'userlabel'          => get_string('report_user', 'local_aihub'),
             'componentlabel'     => get_string('mykeys_log_component', 'local_aihub'),
             'actionlabel'        => get_string('mykeys_log_action', 'local_aihub'),
             'providerlabel'      => get_string('mykeys_log_provider', 'local_aihub'),
             'modellabel'         => get_string('mykeys_log_model', 'local_aihub'),
             'datelabel'          => get_string('mykeys_log_date', 'local_aihub'),
+            'statuslabel'        => get_string('report_status', 'local_aihub'),
+            'onlyfailures'       => $this->onlyfailures,
+            'showallurl'         => (new moodle_url('/local/aihub/report.php'))->out(false),
+            'onlyfailuresurl'    => (new moodle_url(
+                '/local/aihub/report.php',
+                ['onlyfailures' => 1]
+            ))->out(false),
+            'showalllabel'       => get_string('report_showall', 'local_aihub'),
+            'onlyfailureslabel'  => get_string('report_onlyfailures', 'local_aihub'),
             'rows'               => $rows,
             'hasrows'            => !empty($rows),
             'downloadcsvurl'     => (new moodle_url(
@@ -87,11 +110,12 @@ class report implements renderable, templatable {
      * @return array[]
      */
     private function log_rows(): array {
-        $records = usage_log::get_recent_site();
+        $records = usage_log::get_recent_site(50, $this->onlyfailures);
         $names = usage_log::user_fullnames($records);
 
         $rows = [];
         foreach ($records as $record) {
+            $failed = empty($record->success);
             $rows[] = [
                 'user'         => $names[(int) $record->userid] ?? (string) $record->userid,
                 'component'    => $record->component,
@@ -99,6 +123,11 @@ class report implements renderable, templatable {
                 'provider'     => $record->provider,
                 'providericon' => self::PROVIDER_ICONS[$record->provider] ?? 'fa-cog',
                 'model'        => (string) ($record->model ?? ''),
+                'failed'       => $failed,
+                'statuslabel'  => $failed
+                    ? get_string('report_failed', 'local_aihub')
+                    : get_string('report_succeeded', 'local_aihub'),
+                'errormessage' => $failed ? (string) ($record->errormessage ?? '') : '',
                 'date'         => userdate(
                     $record->timecreated,
                     get_string('strftimedatetimeshort', 'core_langconfig')

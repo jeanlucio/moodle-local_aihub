@@ -54,6 +54,61 @@ final class usage_log_test extends \advanced_testcase {
         $this->assertNull($row->model);
         $this->assertSame('site', $row->keysource);
         $this->assertSame(1, (int) $row->success);
+        $this->assertNull($row->errormessage);
+    }
+
+    /**
+     * A failed attempt keeps the reason, so a dead key can be told apart from an
+     * exhausted quota without guessing.
+     *
+     * @covers ::record
+     * @return void
+     */
+    public function test_record_keeps_the_failure_reason(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        $id = usage_log::record(
+            (int) $user->id,
+            'local_playergames',
+            'Concepts: test',
+            'DeepSeek',
+            'deepseek-v4-flash',
+            false,
+            'site',
+            'DeepSeek: model not found'
+        );
+
+        $row = $DB->get_record(usage_log::TABLE, ['id' => $id], '*', MUST_EXIST);
+        $this->assertSame(0, (int) $row->success);
+        $this->assertSame('DeepSeek: model not found', $row->errormessage);
+    }
+
+    /**
+     * The failures-only filter narrows both readers without touching the default.
+     *
+     * @covers ::get_recent_site
+     * @covers ::get_recent_for_user
+     * @return void
+     */
+    public function test_only_failures_filter(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        usage_log::record((int) $user->id, 'local_playergames', 'ok', 'Groq', 'llama', true, 'site');
+        usage_log::record((int) $user->id, 'local_playergames', 'bad', 'Gemini', 'flash', false, 'site', 'Gemini: down');
+
+        $this->assertCount(2, usage_log::get_recent_site());
+        $this->assertCount(2, usage_log::get_recent_for_user((int) $user->id));
+
+        $failures = usage_log::get_recent_site(50, true);
+        $this->assertCount(1, $failures);
+        $this->assertSame('Gemini', reset($failures)->provider);
+
+        $userfailures = usage_log::get_recent_for_user((int) $user->id, 15, true);
+        $this->assertCount(1, $userfailures);
+        $this->assertSame('Gemini: down', reset($userfailures)->errormessage);
     }
 
     /**

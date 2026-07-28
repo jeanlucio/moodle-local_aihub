@@ -45,6 +45,7 @@ class usage_log {
      * @param string $model Model identifier used (may be empty).
      * @param bool $success Whether the generation succeeded.
      * @param string $keysource Key tier that served the request: 'personal', 'site' or empty.
+     * @param string $errormessage Why the attempt failed, for a failed entry (may be empty).
      * @return int The inserted record id.
      */
     public static function record(
@@ -54,7 +55,8 @@ class usage_log {
         string $provider,
         string $model,
         bool $success,
-        string $keysource = ''
+        string $keysource = '',
+        string $errormessage = ''
     ): int {
         global $DB;
 
@@ -66,6 +68,7 @@ class usage_log {
         $record->model = $model !== '' ? $model : null;
         $record->keysource = $keysource !== '' ? $keysource : null;
         $record->success = $success ? 1 : 0;
+        $record->errormessage = $errormessage !== '' ? \core_text::substr($errormessage, 0, 255) : null;
         $record->timecreated = time();
 
         return (int) $DB->insert_record(self::TABLE, $record);
@@ -76,16 +79,22 @@ class usage_log {
      *
      * @param int $userid The user whose entries are fetched.
      * @param int $limit Maximum number of rows to return.
+     * @param bool $onlyfailures Whether to restrict the list to failed attempts.
      * @return array Array of record objects.
      */
-    public static function get_recent_for_user(int $userid, int $limit = 15): array {
+    public static function get_recent_for_user(int $userid, int $limit = 15, bool $onlyfailures = false): array {
         global $DB;
+
+        $conditions = ['userid' => $userid];
+        if ($onlyfailures) {
+            $conditions['success'] = 0;
+        }
 
         return $DB->get_records(
             self::TABLE,
-            ['userid' => $userid],
+            $conditions,
             'timecreated DESC',
-            'id, component, description, provider, model, keysource, success, timecreated',
+            'id, component, description, provider, model, keysource, success, errormessage, timecreated',
             0,
             $limit
         );
@@ -104,7 +113,7 @@ class usage_log {
             self::TABLE,
             ['userid' => $userid],
             'timecreated DESC',
-            'id, component, description, provider, model, success, timecreated'
+            'id, component, description, provider, model, success, errormessage, timecreated'
         );
     }
 
@@ -112,16 +121,22 @@ class usage_log {
      * Returns the most recent requests served by the site keys, across all users.
      *
      * @param int $limit Maximum number of rows to return.
+     * @param bool $onlyfailures Whether to restrict the list to failed attempts.
      * @return array Array of record objects.
      */
-    public static function get_recent_site(int $limit = 50): array {
+    public static function get_recent_site(int $limit = 50, bool $onlyfailures = false): array {
         global $DB;
+
+        $conditions = ['keysource' => 'site'];
+        if ($onlyfailures) {
+            $conditions['success'] = 0;
+        }
 
         return $DB->get_records(
             self::TABLE,
-            ['keysource' => 'site'],
+            $conditions,
             'timecreated DESC',
-            'id, userid, component, description, provider, model, success, timecreated',
+            'id, userid, component, description, provider, model, success, errormessage, timecreated',
             0,
             $limit
         );
@@ -139,7 +154,7 @@ class usage_log {
             self::TABLE,
             ['keysource' => 'site'],
             'timecreated DESC',
-            'id, userid, component, description, provider, model, success, timecreated'
+            'id, userid, component, description, provider, model, success, errormessage, timecreated'
         );
     }
 

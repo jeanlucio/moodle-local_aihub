@@ -65,6 +65,8 @@ class provider implements
             'provider'    => 'privacy:metadata:logtable:provider',
             'model'       => 'privacy:metadata:logtable:model',
             'keysource'   => 'privacy:metadata:logtable:keysource',
+            'success'     => 'privacy:metadata:logtable:success',
+            'errormessage' => 'privacy:metadata:logtable:errormessage',
             'timecreated' => 'privacy:metadata:logtable:timecreated',
         ], 'privacy:metadata:logtable');
 

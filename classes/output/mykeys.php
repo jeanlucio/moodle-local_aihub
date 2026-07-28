@@ -93,6 +93,7 @@ class mykeys implements renderable, templatable {
             'logproviderlabel'     => get_string('mykeys_log_provider', 'local_aihub'),
             'logmodellabel'        => get_string('mykeys_log_model', 'local_aihub'),
             'logdatelabel'         => get_string('mykeys_log_date', 'local_aihub'),
+            'logstatuslabel'       => get_string('report_status', 'local_aihub'),
             'logrows'              => $logrows,
             'loghasrows'           => !empty($logrows),
             'downloadcsvurl'       => (new moodle_url(
@@ -148,11 +149,17 @@ class mykeys implements renderable, templatable {
         $records = usage_log::get_recent_for_user($this->userid);
         $rows = [];
         foreach ($records as $record) {
+            $failed = empty($record->success);
             $rows[] = [
                 'description'  => (string) ($record->description ?? ''),
                 'provider'     => $record->provider,
                 'providericon' => self::PROVIDER_ICONS[$record->provider] ?? 'fa-cog',
                 'model'        => (string) ($record->model ?? ''),
+                'failed'       => $failed,
+                'statuslabel'  => $failed
+                    ? get_string('report_failed', 'local_aihub')
+                    : get_string('report_succeeded', 'local_aihub'),
+                'errormessage' => $failed ? (string) ($record->errormessage ?? '') : '',
                 'date'         => userdate(
                     $record->timecreated,
                     get_string('strftimedatetimeshort', 'core_langconfig')
