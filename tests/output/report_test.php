@@ -128,6 +128,46 @@ final class report_test extends \advanced_testcase {
     }
 
     /**
+     * A row written before the failure columns existed still reads as a success.
+     *
+     * The upgrade adds errormessage as nullable, so every pre-existing row carries
+     * a null there and the default 1 in success. Rows built through record() always
+     * set both, so only a hand-built row reproduces what is actually in the table.
+     *
+     * @covers ::export_for_template
+     * @covers ::log_rows
+     * @return void
+     */
+    public function test_a_pre_upgrade_row_renders_as_a_success(): void {
+        global $DB, $PAGE;
+        $this->resetAfterTest();
+        $PAGE->set_url('/local/aihub/report.php');
+        $user = $this->getDataGenerator()->create_user();
+
+        $DB->insert_record(usage_log::TABLE, (object) [
+            'userid' => $user->id,
+            'component' => 'local_playergames',
+            'description' => 'Concepts: test',
+            'provider' => 'Gemini',
+            'model' => 'gemini-flash-latest',
+            'keysource' => 'site',
+            'timecreated' => time(),
+        ]);
+
+        $output = $PAGE->get_renderer('local_aihub');
+        $context = (new report())->export_for_template($output);
+
+        $this->assertFalse($context['rows'][0]['failed']);
+        $this->assertSame('', $context['rows'][0]['errormessage']);
+        $this->assertSame(get_string('report_succeeded', 'local_aihub'), $context['rows'][0]['statuslabel']);
+
+        // And it survives the round trip through the template.
+        $html = $output->render(new report());
+        $this->assertStringNotContainsString('[[', $html);
+        $this->assertStringContainsString('bg-success', $html);
+    }
+
+    /**
      * The page renders end to end with no unresolved string placeholders.
      *
      * @covers ::export_for_template
