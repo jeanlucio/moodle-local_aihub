@@ -106,6 +106,26 @@ final class report_test extends \advanced_testcase {
     }
 
     /**
+     * A request made outside a session is attributed to the system rather than to
+     * user zero, which reads as a broken row.
+     *
+     * @covers ::export_for_template
+     * @covers ::log_rows
+     * @return void
+     */
+    public function test_a_request_with_no_user_is_labelled_system(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+
+        usage_log::record(0, 'mod_codereview', 'Scheduled review', 'Gemini', 'flash', true, 'site');
+
+        $output = $PAGE->get_renderer('core');
+        $context = (new report())->export_for_template($output);
+
+        $this->assertSame(get_string('report_systemuser', 'local_aihub'), $context['rows'][0]['user']);
+    }
+
+    /**
      * The failures-only view narrows the rows and swaps the empty-state wording.
      *
      * @covers ::export_for_template

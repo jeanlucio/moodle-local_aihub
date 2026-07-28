@@ -181,4 +181,23 @@ class usage_log {
         }
         return $names;
     }
+
+    /**
+     * Resolves what to show in a user column for a logged request.
+     *
+     * Requests made from cron or a CLI script carry no user, and a bare zero in a
+     * column headed "user" reads as a broken row rather than as what it is. A user
+     * who no longer resolves keeps their id, which is the only thing left to trace.
+     *
+     * @param array $names Map of user id to full name, from {@see self::user_fullnames()}.
+     * @param int $userid The user id stored on the record.
+     * @return string
+     */
+    public static function display_name(array $names, int $userid): string {
+        if ($userid === 0) {
+            return get_string('report_systemuser', 'local_aihub');
+        }
+
+        return $names[$userid] ?? get_string('report_unknownuser', 'local_aihub', $userid);
+    }
 }

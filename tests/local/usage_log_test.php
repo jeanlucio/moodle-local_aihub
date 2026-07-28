@@ -148,6 +148,26 @@ final class usage_log_test extends \advanced_testcase {
     }
 
     /**
+     * The user column names a person, the system, or an id that no longer resolves,
+     * but never a bare zero.
+     *
+     * @covers ::display_name
+     * @return void
+     */
+    public function test_display_name(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $names = [(int) $user->id => fullname($user)];
+
+        $this->assertSame(fullname($user), usage_log::display_name($names, (int) $user->id));
+        $this->assertSame(get_string('report_systemuser', 'local_aihub'), usage_log::display_name($names, 0));
+        $this->assertSame(
+            get_string('report_unknownuser', 'local_aihub', 999999),
+            usage_log::display_name($names, 999999)
+        );
+    }
+
+    /**
      * Recent entries for a user come back newest first and exclude other users.
      *
      * @covers ::get_recent_for_user

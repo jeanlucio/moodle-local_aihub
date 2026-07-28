@@ -109,7 +109,7 @@ class export {
         $rows = [];
         foreach ($records as $record) {
             $rows[] = [
-                $names[(int) $record->userid] ?? (string) $record->userid,
+                usage_log::display_name($names, (int) $record->userid),
                 $record->component,
                 (string) ($record->description ?? ''),
                 $record->provider,

@@ -117,7 +117,7 @@ class report implements renderable, templatable {
         foreach ($records as $record) {
             $failed = empty($record->success);
             $rows[] = [
-                'user'         => $names[(int) $record->userid] ?? (string) $record->userid,
+                'user'         => usage_log::display_name($names, (int) $record->userid),
                 'component'    => $record->component,
                 'description'  => (string) ($record->description ?? ''),
                 'provider'     => $record->provider,
