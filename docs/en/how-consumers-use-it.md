@@ -25,3 +25,9 @@ if ($result['success']) {
 ```
 
 The returned text is **raw and untrusted**: validate its structure and pass it through `format_text()` before displaying or persisting it.
+
+Two notes on the return value. The generated text is under **`data`**, and the reason for a failure
+under **`message`** — reading the array as an object returns `null` without erroring, which turns
+every success into a silent fallback. And one call can log several rows: the hub records **each
+provider it tried**, under the component and label you passed, so a request that fell through to a
+second provider appears twice in the report, once failed and once succeeded.
