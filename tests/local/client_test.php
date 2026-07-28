@@ -36,7 +36,7 @@ require_once($CFG->dirroot . '/local/aihub/tests/fixtures/dns_stub_client.php');
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \local_aihub\local\client
+ * @covers     \local_aihub\local\client
  */
 final class client_test extends \advanced_testcase {
     /**
@@ -58,7 +58,6 @@ final class client_test extends \advanced_testcase {
      *
      * Only literal IPs and the loopback host are used so no DNS lookup is needed.
      *
-     * @covers ::is_safe_url
      * @return void
      */
     public function test_is_safe_url(): void {
@@ -77,8 +76,6 @@ final class client_test extends \advanced_testcase {
     /**
      * A hostname resolving to a private IP is blocked (anti DNS-rebinding).
      *
-     * @covers ::is_safe_url
-     * @covers ::resolve_dns
      * @return void
      */
     public function test_is_safe_url_blocks_dns_rebinding(): void {
@@ -91,8 +88,6 @@ final class client_test extends \advanced_testcase {
     /**
      * A hostname resolving only to public IPs passes.
      *
-     * @covers ::is_safe_url
-     * @covers ::resolve_dns
      * @return void
      */
     public function test_is_safe_url_allows_public_dns_resolution(): void {
@@ -105,8 +100,6 @@ final class client_test extends \advanced_testcase {
     /**
      * A hostname with no resolvable DNS records is allowed through (nothing to block).
      *
-     * @covers ::is_safe_url
-     * @covers ::resolve_dns
      * @return void
      */
     public function test_is_safe_url_allows_when_dns_resolves_to_nothing(): void {
@@ -119,7 +112,6 @@ final class client_test extends \advanced_testcase {
     /**
      * A bare base URL gets /chat/completions appended; a full path is preserved.
      *
-     * @covers ::resolve_openai_url
      * @return void
      */
     public function test_resolve_openai_url(): void {
@@ -142,8 +134,6 @@ final class client_test extends \advanced_testcase {
     /**
      * The personal tier is tried before the site tier, in provider order.
      *
-     * @covers ::generate_text
-     * @covers ::try_key_tier
      * @return void
      */
     public function test_personal_tier_wins_over_site(): void {
@@ -168,8 +158,6 @@ final class client_test extends \advanced_testcase {
     /**
      * Within a tier, a failing provider falls through to the next one.
      *
-     * @covers ::generate_text
-     * @covers ::try_key_tier
      * @return void
      */
     public function test_provider_fallthrough_within_tier(): void {
@@ -193,8 +181,6 @@ final class client_test extends \advanced_testcase {
     /**
      * Gemini and Groq failing falls through to DeepSeek within the same tier.
      *
-     * @covers ::generate_text
-     * @covers ::try_key_tier
      * @return void
      */
     public function test_deepseek_fallthrough_within_tier(): void {
@@ -225,7 +211,6 @@ final class client_test extends \advanced_testcase {
     /**
      * With no key configured the client reports failure and calls no provider.
      *
-     * @covers ::generate_text
      * @return void
      */
     public function test_no_key_returns_failure(): void {
@@ -246,9 +231,6 @@ final class client_test extends \advanced_testcase {
      * A failure followed by a success used to be overwritten by the winning result
      * and never reached the caller, which is what let a dead key stay invisible.
      *
-     * @covers ::generate_text
-     * @covers ::try_key_tier
-     * @covers ::attempt
      * @return void
      */
     public function test_attempts_keep_a_failure_covered_by_a_later_success(): void {
@@ -285,8 +267,6 @@ final class client_test extends \advanced_testcase {
      * Attempts span both tiers, so a personal key that fails is not lost when a
      * site key answers.
      *
-     * @covers ::generate_text
-     * @covers ::try_key_tier
      * @return void
      */
     public function test_attempts_span_both_key_tiers(): void {

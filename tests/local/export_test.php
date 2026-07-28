@@ -30,13 +30,12 @@ namespace local_aihub\local;
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \local_aihub\local\export
+ * @covers     \local_aihub\local\export
  */
 final class export_test extends \advanced_testcase {
     /**
      * The export includes every row for the user, with all columns.
      *
-     * @covers ::build
      * @return void
      */
     public function test_build(): void {
@@ -66,7 +65,6 @@ final class export_test extends \advanced_testcase {
      * A failed attempt exports its outcome and reason rather than looking like a
      * successful one with missing data.
      *
-     * @covers ::build
      * @return void
      */
     public function test_build_exports_a_failure(): void {
@@ -84,7 +82,6 @@ final class export_test extends \advanced_testcase {
     /**
      * The site export covers every site-key row across users, with the user column.
      *
-     * @covers ::build_site
      * @return void
      */
     public function test_build_site(): void {

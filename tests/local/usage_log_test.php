@@ -30,13 +30,12 @@ namespace local_aihub\local;
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \local_aihub\local\usage_log
+ * @covers     \local_aihub\local\usage_log
  */
 final class usage_log_test extends \advanced_testcase {
     /**
      * A record is inserted with the calling component and an empty model is nulled.
      *
-     * @covers ::record
      * @return void
      */
     public function test_record(): void {
@@ -61,7 +60,6 @@ final class usage_log_test extends \advanced_testcase {
      * A failed attempt keeps the reason, so a dead key can be told apart from an
      * exhausted quota without guessing.
      *
-     * @covers ::record
      * @return void
      */
     public function test_record_keeps_the_failure_reason(): void {
@@ -88,8 +86,6 @@ final class usage_log_test extends \advanced_testcase {
     /**
      * The failures-only filter narrows both readers without touching the default.
      *
-     * @covers ::get_recent_site
-     * @covers ::get_recent_for_user
      * @return void
      */
     public function test_only_failures_filter(): void {
@@ -114,9 +110,6 @@ final class usage_log_test extends \advanced_testcase {
     /**
      * The site readers return only site-key rows, across all users, newest first.
      *
-     * @covers ::get_recent_site
-     * @covers ::get_all_site
-     * @covers ::user_fullnames
      * @return void
      */
     public function test_site_readers(): void {
@@ -151,7 +144,6 @@ final class usage_log_test extends \advanced_testcase {
      * The user column names a person, the system, or an id that no longer resolves,
      * but never a bare zero.
      *
-     * @covers ::display_name
      * @return void
      */
     public function test_display_name(): void {
@@ -170,7 +162,6 @@ final class usage_log_test extends \advanced_testcase {
     /**
      * Recent entries for a user come back newest first and exclude other users.
      *
-     * @covers ::get_recent_for_user
      * @return void
      */
     public function test_get_recent_for_user(): void {

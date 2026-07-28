@@ -30,14 +30,12 @@ namespace local_aihub\local;
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \local_aihub\local\keys
+ * @covers     \local_aihub\local\keys
  */
 final class keys_test extends \advanced_testcase {
     /**
      * OpenAI base URL and model fall back to sane defaults when unset.
      *
-     * @covers ::get_openai_baseurl
-     * @covers ::get_openai_model
      * @return void
      */
     public function test_openai_defaults(): void {
@@ -55,9 +53,6 @@ final class keys_test extends \advanced_testcase {
     /**
      * Personal keys are saved, read back and cleared via user preferences.
      *
-     * @covers ::save_user_key
-     * @covers ::get_personal_key
-     * @covers ::has_personal_key
      * @return void
      */
     public function test_personal_key_roundtrip(): void {
@@ -80,10 +75,6 @@ final class keys_test extends \advanced_testcase {
     /**
      * The personal OpenAI-compatible base URL and model are saved, read back and cleared.
      *
-     * @covers ::save_user_openai_url
-     * @covers ::save_user_openai_model
-     * @covers ::get_personal_openai_url
-     * @covers ::get_personal_openai_model
      * @return void
      */
     public function test_personal_openai_roundtrip(): void {
@@ -108,7 +99,6 @@ final class keys_test extends \advanced_testcase {
     /**
      * Personal keys require both the site toggle and the per-user capability.
      *
-     * @covers ::personal_keys_allowed
      * @return void
      */
     public function test_personal_keys_allowed(): void {
@@ -132,7 +122,6 @@ final class keys_test extends \advanced_testcase {
     /**
      * Resolution prefers the personal key when allowed, otherwise the site key.
      *
-     * @covers ::get_key
      * @return void
      */
     public function test_get_key_resolution(): void {
@@ -156,7 +145,6 @@ final class keys_test extends \advanced_testcase {
     /**
      * Availability reflects site keys, and personal keys only when allowed.
      *
-     * @covers ::has_any_key
      * @return void
      */
     public function test_has_any_key(): void {

@@ -33,15 +33,12 @@ use local_aihub\local\usage_log;
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \local_aihub\output\mykeys
+ * @covers     \local_aihub\output\mykeys
  */
 final class mykeys_test extends \advanced_testcase {
     /**
      * The provider rows reflect each provider's personal-key status, with no key values.
      *
-     * @covers ::export_for_template
-     * @covers ::provider_rows
-     * @covers ::__construct
      * @return void
      */
     public function test_export_for_template_provider_status(): void {
@@ -75,8 +72,6 @@ final class mykeys_test extends \advanced_testcase {
     /**
      * The recent usage rows carry the correct provider icon, including a fallback.
      *
-     * @covers ::export_for_template
-     * @covers ::log_rows
      * @return void
      */
     public function test_export_for_template_log_rows_and_icons(): void {
@@ -100,8 +95,6 @@ final class mykeys_test extends \advanced_testcase {
     /**
      * A user sees why their own key failed, not just that something happened.
      *
-     * @covers ::export_for_template
-     * @covers ::log_rows
      * @return void
      */
     public function test_log_rows_show_a_failure_reason(): void {

@@ -32,7 +32,7 @@ use local_aihub\local\usage_log;
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \local_aihub\task\purge_old_logs
+ * @covers     \local_aihub\task\purge_old_logs
  */
 final class purge_old_logs_test extends \advanced_testcase {
     /**
@@ -51,7 +51,6 @@ final class purge_old_logs_test extends \advanced_testcase {
     /**
      * Rows older than the retention period are deleted; newer rows are kept.
      *
-     * @covers ::execute
      * @return void
      */
     public function test_execute_deletes_only_rows_older_than_retention(): void {
@@ -74,7 +73,6 @@ final class purge_old_logs_test extends \advanced_testcase {
     /**
      * A retention of 0 (or unset) keeps every row indefinitely.
      *
-     * @covers ::execute
      * @return void
      */
     public function test_execute_keeps_everything_when_retention_is_zero(): void {

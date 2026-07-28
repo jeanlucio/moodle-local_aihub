@@ -37,13 +37,12 @@ use local_aihub\local\usage_log;
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \local_aihub\privacy\provider
+ * @covers     \local_aihub\privacy\provider
  */
 final class privacy_provider_test extends \advanced_testcase {
     /**
      * Metadata declares the log table, the preferences and the external links.
      *
-     * @covers ::get_metadata
      * @return void
      */
     public function test_get_metadata(): void {
@@ -54,8 +53,6 @@ final class privacy_provider_test extends \advanced_testcase {
     /**
      * The user's own context is returned when they have log rows.
      *
-     * @covers ::get_contexts_for_userid
-     * @covers ::get_users_in_context
      * @return void
      */
     public function test_contexts_and_users(): void {
@@ -76,8 +73,6 @@ final class privacy_provider_test extends \advanced_testcase {
     /**
      * Exporting writes the log rows and redacts stored key values.
      *
-     * @covers ::export_user_data
-     * @covers ::export_user_preferences
      * @return void
      */
     public function test_export(): void {
@@ -109,9 +104,6 @@ final class privacy_provider_test extends \advanced_testcase {
     /**
      * Deleting for a user empties their log rows.
      *
-     * @covers ::delete_data_for_user
-     * @covers ::delete_data_for_all_users_in_context
-     * @covers ::delete_data_for_users
      * @return void
      */
     public function test_delete_for_user(): void {

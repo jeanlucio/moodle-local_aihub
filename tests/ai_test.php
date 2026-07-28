@@ -39,7 +39,7 @@ require_once($CFG->dirroot . '/local/aihub/tests/fixtures/mock_client.php');
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \local_aihub\ai
+ * @covers     \local_aihub\ai
  */
 final class ai_test extends \advanced_testcase {
     #[\Override]
@@ -51,7 +51,6 @@ final class ai_test extends \advanced_testcase {
     /**
      * Availability is false with no key and true once a site key exists.
      *
-     * @covers ::is_available
      * @return void
      */
     public function test_is_available(): void {
@@ -67,7 +66,6 @@ final class ai_test extends \advanced_testcase {
     /**
      * A successful generation records a log row tagged with the caller component.
      *
-     * @covers ::generate_text
      * @return void
      */
     public function test_generate_text_logs_on_success(): void {
@@ -103,7 +101,6 @@ final class ai_test extends \advanced_testcase {
     /**
      * With no key configured no provider is ever called, so there is nothing to log.
      *
-     * @covers ::generate_text
      * @return void
      */
     public function test_generate_text_does_not_log_when_no_provider_is_called(): void {
@@ -126,7 +123,6 @@ final class ai_test extends \advanced_testcase {
      * This is the case the log used to hide: a provider that fails is covered by
      * whichever one succeeds next, so a permanently broken key leaves no trace.
      *
-     * @covers ::generate_text
      * @return void
      */
     public function test_generate_text_logs_a_failure_covered_by_a_later_success(): void {
@@ -171,7 +167,6 @@ final class ai_test extends \advanced_testcase {
      * A consumer that resolved a hub key itself and made its own request can still
      * report that usage, without going through generate_text()/the client.
      *
-     * @covers ::report_usage
      * @return void
      */
     public function test_report_usage_writes_log_row(): void {
@@ -194,7 +189,6 @@ final class ai_test extends \advanced_testcase {
     /**
      * The same reporting path can record a failure, for a consumer willing to.
      *
-     * @covers ::report_usage
      * @return void
      */
     public function test_report_usage_can_record_a_failure(): void {

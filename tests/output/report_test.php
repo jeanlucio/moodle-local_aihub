@@ -32,14 +32,12 @@ use local_aihub\local\usage_log;
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversDefaultClass \local_aihub\output\report
+ * @covers     \local_aihub\output\report
  */
 final class report_test extends \advanced_testcase {
     /**
      * Rows carry the requesting user's name and the correct provider icon, DeepSeek included.
      *
-     * @covers ::export_for_template
-     * @covers ::log_rows
      * @return void
      */
     public function test_export_for_template_rows_and_icons(): void {
@@ -63,7 +61,6 @@ final class report_test extends \advanced_testcase {
     /**
      * With no site-keys usage, the report reports an empty state.
      *
-     * @covers ::export_for_template
      * @return void
      */
     public function test_export_for_template_empty_state(): void {
@@ -81,8 +78,6 @@ final class report_test extends \advanced_testcase {
      * A failed attempt is marked as such and carries its reason; a successful one
      * carries neither, so the reason column stays empty rather than stale.
      *
-     * @covers ::export_for_template
-     * @covers ::log_rows
      * @return void
      */
     public function test_failed_rows_carry_their_reason(): void {
@@ -109,8 +104,6 @@ final class report_test extends \advanced_testcase {
      * A request made outside a session is attributed to the system rather than to
      * user zero, which reads as a broken row.
      *
-     * @covers ::export_for_template
-     * @covers ::log_rows
      * @return void
      */
     public function test_a_request_with_no_user_is_labelled_system(): void {
@@ -128,8 +121,6 @@ final class report_test extends \advanced_testcase {
     /**
      * The failures-only view narrows the rows and swaps the empty-state wording.
      *
-     * @covers ::export_for_template
-     * @covers ::log_rows
      * @return void
      */
     public function test_only_failures_view(): void {
@@ -154,8 +145,6 @@ final class report_test extends \advanced_testcase {
      * a null there and the default 1 in success. Rows built through record() always
      * set both, so only a hand-built row reproduces what is actually in the table.
      *
-     * @covers ::export_for_template
-     * @covers ::log_rows
      * @return void
      */
     public function test_a_pre_upgrade_row_renders_as_a_success(): void {
@@ -190,7 +179,6 @@ final class report_test extends \advanced_testcase {
     /**
      * The page renders end to end with no unresolved string placeholders.
      *
-     * @covers ::export_for_template
      * @return void
      */
     public function test_template_renders(): void {
