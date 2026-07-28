@@ -19,3 +19,26 @@ Feature: Manage personal AI keys
     Then I should see "Your AI key settings were saved."
     And I should see "Configured"
     And the field "key_gemini" matches value ""
+
+  Scenario: My own history shows why an attempt of mine failed
+    Given the following AI usage entries exist:
+      | user  | component      | description | provider | keysource | success | errormessage            |
+      | admin | mod_codereview | Review      | Gemini   | personal  | 0       | Gemini: invalid API key |
+    When I am on the My AI keys page
+    Then I should see "Recent AI usage"
+    And I should see "Failed"
+    And I should see "Gemini: invalid API key"
+
+  Scenario: My history downloads as CSV
+    Given the following AI usage entries exist:
+      | user  | component      | description | provider | keysource | success |
+      | admin | mod_codereview | Review      | Groq     | personal  | 1       |
+    When I am on the My AI keys page
+    Then following "Download CSV" should download between "100" and "10000" bytes
+
+  Scenario: My history downloads as Excel
+    Given the following AI usage entries exist:
+      | user  | component      | description | provider | keysource | success |
+      | admin | mod_codereview | Review      | Groq     | personal  | 1       |
+    When I am on the My AI keys page
+    Then following "Download Excel" should download between "1000" and "200000" bytes

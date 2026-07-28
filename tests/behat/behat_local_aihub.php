@@ -25,6 +25,9 @@
 
 require_once(__DIR__ . '/../../../../lib/behat/behat_base.php');
 
+use Behat\Gherkin\Node\TableNode;
+use local_aihub\local\usage_log;
+
 /**
  * Steps that drive the self-service AI keys page in acceptance tests.
  *
@@ -41,5 +44,46 @@ class behat_local_aihub extends behat_base {
      */
     public function i_am_on_the_my_ai_keys_page(): void {
         $this->getSession()->visit($this->locate_path('/local/aihub/mykeys.php'));
+    }
+
+    /**
+     * Opens the site-wide AI usage report.
+     *
+     * @Given I am on the site AI usage report page
+     */
+    public function i_am_on_the_site_ai_usage_report_page(): void {
+        $this->getSession()->visit($this->locate_path('/local/aihub/report.php'));
+    }
+
+    /**
+     * Seeds usage log rows.
+     *
+     * The log is written by the generation path rather than by a form, so there is
+     * no interface a scenario could drive to produce a row to read back.
+     *
+     * Columns: user, component, description, provider, model, keysource, success,
+     * errormessage. Only user and provider are required.
+     *
+     * @Given /^the following AI usage entries exist:$/
+     * @param TableNode $data The rows to insert.
+     */
+    public function the_following_ai_usage_entries_exist(TableNode $data): void {
+        global $DB;
+
+        foreach ($data->getHash() as $row) {
+            $user = $DB->get_record('user', ['username' => $row['user']], 'id', MUST_EXIST);
+            $success = !isset($row['success']) || $row['success'] === '1';
+
+            usage_log::record(
+                (int) $user->id,
+                $row['component'] ?? 'local_aihub',
+                $row['description'] ?? '',
+                $row['provider'],
+                $row['model'] ?? '',
+                $success,
+                $row['keysource'] ?? 'site',
+                $row['errormessage'] ?? ''
+            );
+        }
     }
 }
