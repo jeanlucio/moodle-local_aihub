@@ -51,6 +51,26 @@ final class keys_test extends \advanced_testcase {
     }
 
     /**
+     * Clearing the settings falls back to the built-in values rather than sending a
+     * request to an empty URL with no model.
+     *
+     * The admin form accepts an empty field, and the defaults declared in
+     * settings.php happen to match these, so a test that only reads the untouched
+     * settings never reaches this branch.
+     *
+     * @return void
+     */
+    public function test_openai_defaults_when_the_settings_are_blanked(): void {
+        $this->resetAfterTest();
+
+        set_config('openai_baseurl', '', 'local_aihub');
+        set_config('openai_model', '', 'local_aihub');
+
+        $this->assertSame('https://api.openai.com/v1', keys::get_openai_baseurl());
+        $this->assertSame('gpt-4o-mini', keys::get_openai_model());
+    }
+
+    /**
      * Personal keys are saved, read back and cleared via user preferences.
      *
      * @return void
@@ -161,6 +181,23 @@ final class keys_test extends \advanced_testcase {
 
         // A site key always counts.
         set_config('groq_key', 'site-groq', 'local_aihub');
+        $this->assertTrue(keys::has_any_key());
+    }
+
+    /**
+     * Once personal keys are allowed, the user's own key is enough on its own, with
+     * no site key configured at all.
+     *
+     * @return void
+     */
+    public function test_has_any_key_counts_a_permitted_personal_key(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        set_config('enablepersonalkeys', 1, 'local_aihub');
+
+        $this->assertFalse(keys::has_any_key());
+
+        keys::save_user_key(keys::PROVIDER_GROQ, 'personal-groq');
         $this->assertTrue(keys::has_any_key());
     }
 }

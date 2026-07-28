@@ -49,6 +49,19 @@ final class purge_old_logs_test extends \advanced_testcase {
     }
 
     /**
+     * The task names itself from a language string, so the scheduled-tasks screen
+     * shows a sentence rather than a missing-string marker.
+     *
+     * @return void
+     */
+    public function test_get_name(): void {
+        $name = (new purge_old_logs())->get_name();
+
+        $this->assertNotEmpty($name);
+        $this->assertStringNotContainsString('[[', $name);
+    }
+
+    /**
      * Rows older than the retention period are deleted; newer rows are kept.
      *
      * @return void

@@ -405,6 +405,22 @@ class client {
     }
 
     /**
+     * Builds the HTTP client used for a provider call.
+     *
+     * The one seam in this class: every provider request goes through here, so a
+     * test can answer with a canned response and exercise the parsing below, which
+     * differs per provider and is otherwise only ever reached over the network.
+     *
+     * @return \curl
+     */
+    protected function make_curl(): \curl {
+        global $CFG;
+        require_once($CFG->libdir . '/filelib.php');
+
+        return new \curl();
+    }
+
+    /**
      * Executes an HTTP POST using Moodle's curl wrapper and parses the response.
      *
      * @param string $url Target URL.
@@ -414,10 +430,7 @@ class client {
      * @return array Keys: success (bool), data (string) on success, provider (string), message (string) on failure.
      */
     protected function http_post(string $url, string $payload, array $headers, string $source): array {
-        global $CFG;
-        require_once($CFG->libdir . '/filelib.php');
-
-        $curl = new \curl();
+        $curl = $this->make_curl();
         $curl->setHeader($headers);
         $response = $curl->post($url, $payload, ['timeout' => self::HTTP_TIMEOUT]);
         $info = $curl->get_info();

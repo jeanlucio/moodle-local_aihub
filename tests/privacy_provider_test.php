@@ -27,6 +27,7 @@ namespace local_aihub\privacy;
 use context_user;
 use core_privacy\local\metadata\collection;
 use core_privacy\local\request\approved_contextlist;
+use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\writer;
 use local_aihub\local\keys;
 use local_aihub\local\usage_log;
@@ -120,5 +121,83 @@ final class privacy_provider_test extends \advanced_testcase {
 
         $this->assertSame(0, $DB->count_records('local_aihub_log', ['userid' => $user->id]));
         $this->assertSame(1, $DB->count_records('local_aihub_log', ['userid' => $other->id]));
+    }
+
+    /**
+     * Deleting a whole user context empties that user's rows and no one else's.
+     *
+     * @return void
+     */
+    public function test_delete_for_all_users_in_context(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $other = $this->getDataGenerator()->create_user();
+        usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', 'flash', true);
+        usage_log::record((int) $other->id, 'local_aiassess', 'Forum review', 'Groq', 'llama', true);
+
+        provider::delete_data_for_all_users_in_context(context_user::instance($user->id));
+
+        $this->assertSame(0, $DB->count_records('local_aihub_log', ['userid' => $user->id]));
+        $this->assertSame(1, $DB->count_records('local_aihub_log', ['userid' => $other->id]));
+    }
+
+    /**
+     * A context that is not a user context is left alone. The log is keyed by user
+     * and nothing else, so a course-level request must not empty the whole table.
+     *
+     * @return void
+     */
+    public function test_delete_ignores_a_non_user_context(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $course = $this->getDataGenerator()->create_course();
+        usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', 'flash', true);
+
+        provider::delete_data_for_all_users_in_context(\context_course::instance($course->id));
+
+        $this->assertSame(1, $DB->count_records('local_aihub_log'));
+    }
+
+    /**
+     * Deleting an approved user list removes only the user the context belongs to,
+     * even when the list names someone else as well.
+     *
+     * @return void
+     */
+    public function test_delete_for_users(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $other = $this->getDataGenerator()->create_user();
+        usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', 'flash', true);
+        usage_log::record((int) $other->id, 'local_aiassess', 'Forum review', 'Groq', 'llama', true);
+
+        $context = context_user::instance($user->id);
+        $userlist = new approved_userlist($context, 'local_aihub', [$user->id, $other->id]);
+        provider::delete_data_for_users($userlist);
+
+        $this->assertSame(0, $DB->count_records('local_aihub_log', ['userid' => $user->id]));
+        // The other user's rows live in their own context and are not this one's to drop.
+        $this->assertSame(1, $DB->count_records('local_aihub_log', ['userid' => $other->id]));
+    }
+
+    /**
+     * A user list in a non-user context deletes nothing.
+     *
+     * @return void
+     */
+    public function test_delete_for_users_ignores_a_non_user_context(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $course = $this->getDataGenerator()->create_course();
+        usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', 'flash', true);
+
+        $userlist = new approved_userlist(\context_course::instance($course->id), 'local_aihub', [$user->id]);
+        provider::delete_data_for_users($userlist);
+
+        $this->assertSame(1, $DB->count_records('local_aihub_log'));
     }
 }

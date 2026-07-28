@@ -141,6 +141,29 @@ final class usage_log_test extends \advanced_testcase {
     }
 
     /**
+     * The export reader returns every row for the user, past the screen's cap, and
+     * still only that user's.
+     *
+     * @return void
+     */
+    public function test_get_all_for_user(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $other = $this->getDataGenerator()->create_user();
+
+        for ($i = 0; $i < 20; $i++) {
+            usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', 'flash', true);
+        }
+        usage_log::record((int) $other->id, 'local_aiassess', 'Forum review', 'Groq', 'llama', true);
+
+        $rows = usage_log::get_all_for_user((int) $user->id);
+
+        // Twenty rows, so the fifteen-row screen limit is not being applied here.
+        $this->assertCount(20, $rows);
+        $this->assertSame(['local_playergames'], array_unique(array_column(array_values($rows), 'component')));
+    }
+
+    /**
      * The user column names a person, the system, or an id that no longer resolves,
      * but never a bare zero.
      *
