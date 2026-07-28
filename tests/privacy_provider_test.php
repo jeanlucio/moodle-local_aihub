@@ -124,6 +124,36 @@ final class privacy_provider_test extends \advanced_testcase {
     }
 
     /**
+     * The two readers ignore a context that is not a user context, and the export
+     * writes nothing for a user who has no rows.
+     *
+     * @return void
+     */
+    public function test_readers_ignore_what_is_not_theirs(): void {
+        $this->resetAfterTest();
+        // The writer is a static that carries over from whatever ran before.
+        writer::reset();
+        $user = $this->getDataGenerator()->create_user();
+        $course = $this->getDataGenerator()->create_course();
+        $coursecontext = \context_course::instance($course->id);
+
+        $userlist = new \core_privacy\local\request\userlist($coursecontext, 'local_aihub');
+        provider::get_users_in_context($userlist);
+        $this->assertEmpty($userlist->get_userids());
+
+        // A course context in the approved list is skipped rather than exported.
+        $approved = new approved_contextlist($user, 'local_aihub', [$coursecontext->id]);
+        provider::export_user_data($approved);
+        $this->assertFalse(writer::with_context($coursecontext)->has_any_data());
+
+        // The user's own context, but with nothing logged in it.
+        $usercontext = context_user::instance($user->id);
+        $empty = new approved_contextlist($user, 'local_aihub', [$usercontext->id]);
+        provider::export_user_data($empty);
+        $this->assertFalse(writer::with_context($usercontext)->has_any_data());
+    }
+
+    /**
      * Deleting a whole user context empties that user's rows and no one else's.
      *
      * @return void

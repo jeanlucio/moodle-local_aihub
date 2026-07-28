@@ -164,6 +164,15 @@ final class usage_log_test extends \advanced_testcase {
     }
 
     /**
+     * Resolving names for an empty set asks the database nothing.
+     *
+     * @return void
+     */
+    public function test_user_fullnames_with_no_records(): void {
+        $this->assertSame([], usage_log::user_fullnames([]));
+    }
+
+    /**
      * The user column names a person, the system, or an id that no longer resolves,
      * but never a bare zero.
      *

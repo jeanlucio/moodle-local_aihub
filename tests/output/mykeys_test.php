@@ -93,6 +93,31 @@ final class mykeys_test extends \advanced_testcase {
     }
 
     /**
+     * The page renders end to end, with no unresolved string placeholders and no
+     * key value written into the markup.
+     *
+     * @return void
+     */
+    public function test_template_renders_without_revealing_a_key(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $PAGE->set_url('/local/aihub/mykeys.php');
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+        set_config('enablepersonalkeys', 1, 'local_aihub');
+
+        keys::save_user_key(keys::PROVIDER_GEMINI, 'supersecretkey');
+        usage_log::record((int) $user->id, 'mod_codereview', 'Review', 'Gemini', 'flash', false, 'personal', 'Gemini: down');
+
+        $output = $PAGE->get_renderer('local_aihub');
+        $html = $output->render(new mykeys((int) $user->id));
+
+        $this->assertStringNotContainsString('[[', $html);
+        $this->assertStringNotContainsString('supersecretkey', $html);
+        $this->assertStringContainsString('Gemini: down', $html);
+    }
+
+    /**
      * A user sees why their own key failed, not just that something happened.
      *
      * @return void

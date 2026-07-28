@@ -79,6 +79,17 @@ final class client_test extends \advanced_testcase {
     }
 
     /**
+     * A URL that parses but carries no host is rejected before any lookup.
+     *
+     * @return void
+     */
+    public function test_is_safe_url_rejects_a_missing_host(): void {
+        $client = new client();
+
+        $this->assertFalse($this->call_protected($client, 'is_safe_url', ['https:///v1/chat']));
+    }
+
+    /**
      * A hostname resolving to a private IP is blocked (anti DNS-rebinding).
      *
      * @return void
