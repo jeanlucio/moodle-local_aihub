@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/aihub/db" VERSION="20260728"
-    COMMENT="XMLDB file for Moodle local/aihub"
+<XMLDB PATH="local/aihub/db" VERSION="20260728" COMMENT="XMLDB file for Moodle local/aihub"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
   <TABLES>
     <TABLE NAME="local_aihub_log" COMMENT="One row per AI generation request; usage auditing and self-service history">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
-        <FIELD NAME="component" TYPE="char" LENGTH="100" NOTNULL="true"/>
-        <FIELD NAME="description" TYPE="char" LENGTH="255" NOTNULL="false"/>
-        <FIELD NAME="provider" TYPE="char" LENGTH="40" NOTNULL="true"/>
-        <FIELD NAME="model" TYPE="char" LENGTH="100" NOTNULL="false"/>
-        <FIELD NAME="keysource" TYPE="char" LENGTH="20" NOTNULL="false" COMMENT="Which key tier served the request: personal or site"/>
-        <FIELD NAME="success" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
-        <FIELD NAME="errormessage" TYPE="char" LENGTH="255" NOTNULL="false" COMMENT="Why a failed attempt failed; null on a successful one"/>
-        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="component" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="description" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="provider" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="model" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="keysource" TYPE="char" LENGTH="20" NOTNULL="false" SEQUENCE="false" COMMENT="Which key tier served the request: personal or site"/>
+        <FIELD NAME="success" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
+        <FIELD NAME="errormessage" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Why a failed attempt failed; null on a successful one"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
