@@ -10,7 +10,7 @@ lang: en
 [![Latest Release](https://img.shields.io/github/v/release/jeanlucio/moodle-local_aihub?style=flat)](https://github.com/jeanlucio/moodle-local_aihub/releases)
 [![PlayerGames Ecosystem](https://img.shields.io/badge/PlayerGames-Ecosystem-6f42c1?style=flat&logo=gamepad&logoColor=white)](https://jeanlucio.github.io/playergames/)
 ![Role](https://img.shields.io/badge/Role-Shared_Service-198754?style=flat)
-[![Author](https://img.shields.io/badge/by-Jean_Lucio-6f42c1?style=flat)](https://marketplace.moodle.com/user/984)
+[![Author](https://img.shields.io/badge/by-Jean_Lucio-6f42c1?style=flat)](https://github.com/jeanlucio/)
 
 [![Moodle Plugin CI](https://github.com/jeanlucio/moodle-local_aihub/actions/workflows/ci.yml/badge.svg)](https://github.com/jeanlucio/moodle-local_aihub/actions/workflows/ci.yml)
 [![Last Commit](https://img.shields.io/github/last-commit/jeanlucio/moodle-local_aihub?style=flat)](https://github.com/jeanlucio/moodle-local_aihub/commits)
@@ -20,9 +20,7 @@ lang: en
 plugins generate text through shared AI API keys, without each plugin reimplementing the HTTP
 transport, the SSRF guard, the provider ladder or a key store.
 
-Use the sidebar to jump to any section on this page.
-
-Source code: [github.com/jeanlucio/moodle-local_aihub](https://github.com/jeanlucio/moodle-local_aihub)
+<p class="page-hint">👈 Use the sidebar to jump to any section on this page.</p>
 
 ---
 

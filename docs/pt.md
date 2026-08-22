@@ -10,7 +10,7 @@ lang: pt
 [![Latest Release](https://img.shields.io/github/v/release/jeanlucio/moodle-local_aihub?style=flat)](https://github.com/jeanlucio/moodle-local_aihub/releases)
 [![PlayerGames Ecosystem](https://img.shields.io/badge/PlayerGames-Ecosystem-6f42c1?style=flat&logo=gamepad&logoColor=white)](https://jeanlucio.github.io/playergames/)
 ![Role](https://img.shields.io/badge/Role-Shared_Service-198754?style=flat)
-[![Author](https://img.shields.io/badge/by-Jean_Lucio-6f42c1?style=flat)](https://marketplace.moodle.com/user/984)
+[![Author](https://img.shields.io/badge/by-Jean_Lucio-6f42c1?style=flat)](https://github.com/jeanlucio/)
 
 [![Moodle Plugin CI](https://github.com/jeanlucio/moodle-local_aihub/actions/workflows/ci.yml/badge.svg)](https://github.com/jeanlucio/moodle-local_aihub/actions/workflows/ci.yml)
 [![Last Commit](https://img.shields.io/github/last-commit/jeanlucio/moodle-local_aihub?style=flat)](https://github.com/jeanlucio/moodle-local_aihub/commits)
@@ -21,9 +21,7 @@ permite que os plugins da própria instituição gerem texto através de chaves 
 compartilhadas, sem que cada plugin reimplemente o transporte HTTP, o guard de SSRF, a escada de
 provedores ou um armazenamento de chaves.
 
-Use a barra lateral para pular direto a qualquer seção desta página.
-
-Código-fonte: [github.com/jeanlucio/moodle-local_aihub](https://github.com/jeanlucio/moodle-local_aihub)
+<p class="page-hint">👈 Use a barra lateral para pular direto a qualquer seção desta página.</p>
 
 ---
 
