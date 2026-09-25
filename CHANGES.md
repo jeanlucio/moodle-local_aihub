@@ -4,6 +4,11 @@ All notable changes to this plugin are documented here.
 
 ---
 
+## [v1.3.1] — 2026-09-25
+
+### Confirmed
+- Tested and confirmed compatible with Moodle 5.3.
+
 ## [v1.3.0] — 2026-07-28
 
 ### Added
