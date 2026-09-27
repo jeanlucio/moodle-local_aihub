@@ -24,10 +24,17 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$ADMIN->add('localplugins', new admin_category(
-    'local_aihub_category',
-    get_string('pluginname', 'local_aihub')
-));
+// Moodle 4.5 only creates the localplugins category for site admins (newer branches always create it). A
+// user who holds local/aihub:viewusage without moodle/site:config still needs the usage report, so there it
+// goes under Reports instead of a category whose parent does not exist for them.
+$reportparent = 'reports';
+if ($ADMIN->locate('localplugins')) {
+    $ADMIN->add('localplugins', new admin_category(
+        'local_aihub_category',
+        get_string('pluginname', 'local_aihub')
+    ));
+    $reportparent = 'local_aihub_category';
+}
 
 if ($hassiteconfig) {
     $settings = new admin_settingpage('local_aihub', get_string('settings', 'moodle'));
@@ -99,7 +106,7 @@ if ($hassiteconfig) {
     ));
 }
 
-$ADMIN->add('local_aihub_category', new admin_externalpage(
+$ADMIN->add($reportparent, new admin_externalpage(
     'local_aihub_report',
     get_string('report_title', 'local_aihub'),
     new moodle_url('/local/aihub/report.php'),
