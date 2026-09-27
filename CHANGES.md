@@ -4,6 +4,14 @@ All notable changes to this plugin are documented here.
 
 ---
 
+## [v1.3.2] — 2026-09-27
+
+### Fixed
+- On Moodle 4.5, a user holding `local/aihub:viewusage` without full site administration
+  rights (a manager, by default) was denied access to the site AI usage report, even through
+  its direct URL, and saw a "parent does not exist!" debugging notice. The report now appears
+  under Site administration → Reports for them.
+
 ## [v1.3.1] — 2026-09-25
 
 ### Confirmed
