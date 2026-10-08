@@ -249,6 +249,7 @@ final class report_test extends \advanced_testcase {
 
         $this->assertStringNotContainsString('[[', $html);
         $this->assertStringContainsString('Gemini: down', $html);
-        $this->assertStringContainsString('bg-danger', $html);
+        // The red badge sets its own text colour: Moodle 4.5 gives it dark text, 3:1 on that red.
+        $this->assertStringContainsString('badge bg-danger text-white', $html);
     }
 }
