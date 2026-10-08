@@ -345,12 +345,20 @@ class client {
      * The same rule a call applies, so a value can be refused when it is saved instead of
      * being accepted and then ignored on every request.
      *
-     * @param string $url The endpoint as typed. Empty means the default endpoint.
+     * @param string $url The endpoint exactly as typed, before any cleaning. Empty means the
+     *                    default endpoint.
      * @return string The reason, or an empty string when the endpoint is acceptable.
      */
     public function endpoint_problem(string $url): string {
         if ($url === '') {
             return '';
+        }
+
+        // PARAM_URL answers an address it cannot parse with an empty string, which a form
+        // would then take for "forget the endpoint": it has to be refused while the typed
+        // value is still in hand.
+        if (clean_param($url, PARAM_URL) === '') {
+            return get_string('endpointinvalid', 'local_aihub');
         }
 
         return $this->is_safe_url($this->resolve_openai_url($url)) ? '' : get_string('endpointblocked', 'local_aihub');

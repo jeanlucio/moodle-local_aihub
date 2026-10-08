@@ -75,4 +75,20 @@ final class setting_endpoint_test extends \advanced_testcase {
         $this->assertSame('https://8.8.8.8/v1', get_config('local_aihub', 'openai_baseurl'));
         $this->assertSame('', $this->setting()->write_setting(''));
     }
+
+    /**
+     * Something that cannot be read as a web address is refused too, instead of being stored
+     * as an empty value that would make the default endpoint apply without a word.
+     *
+     * @return void
+     */
+    public function test_a_value_that_is_not_a_web_address_is_not_saved(): void {
+        $this->resetAfterTest();
+        set_config('openai_baseurl', 'https://8.8.8.8/v1', 'local_aihub');
+
+        $error = $this->setting()->write_setting('https://[2001:db8::1]/v1');
+
+        $this->assertNotSame('', $error);
+        $this->assertSame('https://8.8.8.8/v1', get_config('local_aihub', 'openai_baseurl'));
+    }
 }

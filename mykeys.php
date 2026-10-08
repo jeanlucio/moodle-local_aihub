@@ -67,7 +67,7 @@ if (data_submitted() && confirm_sesskey()) {
 
     // An endpoint a request would refuse is not stored: saying "saved" and then never
     // using it would leave no sign of why the provider stays silent.
-    $openaiurl = optional_param('openai_url', '', PARAM_URL);
+    $openaiurl = optional_param('openai_url', '', PARAM_RAW_TRIMMED);
     $problem = (new client())->endpoint_problem($openaiurl);
     if ($problem !== '') {
         redirect(
@@ -77,7 +77,7 @@ if (data_submitted() && confirm_sesskey()) {
             \core\output\notification::NOTIFY_ERROR
         );
     }
-    keys::save_user_openai_url($openaiurl, $userid);
+    keys::save_user_openai_url(clean_param($openaiurl, PARAM_URL), $userid);
 
     redirect($url, get_string('mykeys_keyssaved', 'local_aihub'), null, \core\output\notification::NOTIFY_SUCCESS);
 }

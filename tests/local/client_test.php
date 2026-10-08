@@ -684,4 +684,20 @@ final class client_test extends \advanced_testcase {
         $this->assertSame('personal', $result['keysource']);
         $this->assertSame(['Groq'], $client->calls);
     }
+
+    /**
+     * Something that is not a web address is a problem to report, not an empty value. A form
+     * reads the field with PARAM_URL, which turns what it cannot parse into an empty string,
+     * and an empty string is the instruction to forget the endpoint.
+     *
+     * @return void
+     */
+    public function test_a_value_that_is_not_a_web_address_is_reported(): void {
+        $client = new client();
+
+        $this->assertNotSame('', $client->endpoint_problem('https://[2001:db8::1]/v1'));
+        $this->assertNotSame('', $client->endpoint_problem('not a url'));
+        $this->assertNotSame('', $client->endpoint_problem('https://exa mple.com/v1'));
+        $this->assertSame('', $client->endpoint_problem('https://8.8.8.8/v1'));
+    }
 }

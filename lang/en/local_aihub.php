@@ -33,6 +33,7 @@ $string['emptyresponsewhy'] = 'the provider answered without any text ({$a})';
 $string['enablepersonalkeys'] = 'Enable personal API keys';
 $string['enablepersonalkeys_desc'] = 'Allow users with the capability to store their own AI API keys.';
 $string['endpointblocked'] = 'The endpoint must be an HTTPS address that resolves to a public IP. Plain http, localhost and private networks are not allowed.';
+$string['endpointinvalid'] = 'The endpoint is not a valid web address. Use a host name, not an IP address in brackets.';
 $string['mykeys'] = 'My AI keys';
 $string['mykeys_advanced'] = 'Advanced OpenAI-compatible settings';
 $string['mykeys_endpointrefused'] = 'Your keys and model were saved, but the endpoint was not. {$a}';
