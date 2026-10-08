@@ -36,7 +36,9 @@ a provider on its own.
   set entirely by the chosen provider.
 * **API keys:** Not provided by the hub. Obtain a key directly from the provider's own website
   and configure it as a site key at **Site administration > Plugins > Local plugins > AI Hub**,
-  or, if personal keys are enabled, as a personal key in *My AI keys* (user preferences).
+  or, if personal keys are enabled, as a personal key in *My AI keys* (user preferences). The
+  capability *Use a personal AI API key* is granted to managers and teachers by default and counts
+  when it is held in any course, so a teacher needs no site-level role to see that page.
 * **Demo credentials:** Not applicable — no credentials are required to install or use the hub;
   every AI feature stays inert until a key is configured.
 
@@ -106,7 +108,9 @@ provedor por conta própria.
 * **Chaves de API:** Não são fornecidas pelo hub. Obtenha uma chave diretamente no site do
   provedor e configure-a como chave de site em **Administração do site > Plugins > Plugins
   locais > AI Hub**, ou, se as chaves pessoais estiverem habilitadas, como chave pessoal em
-  *Minhas chaves de IA* (preferências do usuário).
+  *Minhas chaves de IA* (preferências do usuário). A capacidade *Usar uma chave de API de IA
+  pessoal* já vem concedida a gerentes e professores e vale quando mantida em qualquer curso, sem
+  precisar de papel no nível do site.
 * **Credenciais de demonstração:** Não aplicável — nenhuma credencial é exigida para instalar ou
   usar o hub; todo recurso de IA fica inerte até que uma chave seja configurada.
 

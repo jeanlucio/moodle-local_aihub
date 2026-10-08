@@ -155,12 +155,21 @@ class client {
             $openaiurl = $this->resolve_openai_url($rawurl);
             if ($this->is_safe_url($openaiurl)) {
                 $result = $this->call_openai_compatible($system, $user, $openaikey, $openaiurl, $model, $jsonmode);
-                $attempts[] = $this->attempt($result, $keysource);
-                if ($result['success']) {
-                    return $result + ['keysource' => $keysource];
-                }
-                $lasterror = $result;
+            } else {
+                // A refused endpoint is a failure like any other: without a trace the usage
+                // report would show nothing wrong while the configured provider is never used.
+                $result = [
+                    'success' => false,
+                    'provider' => 'OpenAI',
+                    'model' => $model,
+                    'message' => 'OpenAI: ' . get_string('endpointblocked', 'local_aihub'),
+                ];
             }
+            $attempts[] = $this->attempt($result, $keysource);
+            if ($result['success']) {
+                return $result + ['keysource' => $keysource];
+            }
+            $lasterror = $result;
         }
 
         return null;
@@ -331,6 +340,23 @@ class client {
     }
 
     /**
+     * Says why an OpenAI-compatible endpoint would be refused, or nothing when it would not.
+     *
+     * The same rule a call applies, so a value can be refused when it is saved instead of
+     * being accepted and then ignored on every request.
+     *
+     * @param string $url The endpoint as typed. Empty means the default endpoint.
+     * @return string The reason, or an empty string when the endpoint is acceptable.
+     */
+    public function endpoint_problem(string $url): string {
+        if ($url === '') {
+            return '';
+        }
+
+        return $this->is_safe_url($this->resolve_openai_url($url)) ? '' : get_string('endpointblocked', 'local_aihub');
+    }
+
+    /**
      * Returns true when the URL is safe to use as an AI endpoint.
      *
      * Enforces HTTPS and blocks loopback, link-local, and RFC-1918 private
@@ -449,10 +475,46 @@ class client {
         }
 
         $decoded = json_decode($response, true);
+        $decoded = is_array($decoded) ? $decoded : [];
         $content = $source === 'Gemini'
             ? ($decoded['candidates'][0]['content']['parts'][0]['text'] ?? '')
             : ($decoded['choices'][0]['message']['content'] ?? '');
 
+        // A 200 with nothing to read is not an answer: a blocked prompt, an interrupted
+        // generation or a gateway's error page. Calling it a success would stop the chain
+        // from trying the next provider and log a success that produced nothing.
+        if (!is_string($content) || trim($content) === '') {
+            $reason = $this->empty_response_reason($decoded, $source === 'Gemini');
+            $text = $reason !== ''
+                ? get_string('emptyresponsewhy', 'local_aihub', $reason)
+                : get_string('emptyresponse', 'local_aihub');
+
+            return ['success' => false, 'message' => $source . ': ' . $text, 'provider' => $source];
+        }
+
         return ['success' => true, 'data' => $content, 'provider' => $source];
+    }
+
+    /**
+     * Reads, from an answer with no text, the reason the provider gave for it.
+     *
+     * @param array $decoded The decoded response body.
+     * @param bool $gemini Whether the body has Gemini's shape rather than the chat completions one.
+     * @return string The reason, or an empty string when the provider gave none.
+     */
+    protected function empty_response_reason(array $decoded, bool $gemini): string {
+        if ($gemini) {
+            $reason = $decoded['promptFeedback']['blockReason'] ?? null;
+            if ($reason !== null) {
+                return 'blockReason: ' . $reason;
+            }
+            $reason = $decoded['candidates'][0]['finishReason'] ?? null;
+
+            return $reason !== null ? 'finishReason: ' . $reason : '';
+        }
+
+        $reason = $decoded['choices'][0]['finish_reason'] ?? null;
+
+        return $reason !== null ? 'finish_reason: ' . $reason : '';
     }
 }

@@ -200,4 +200,96 @@ final class keys_test extends \advanced_testcase {
         keys::save_user_key(keys::PROVIDER_GROQ, 'personal-groq');
         $this->assertTrue(keys::has_any_key());
     }
+
+    /**
+     * A teacher gets the role from the course enrolment, whose capabilities never reach the
+     * system context. The permission has to be found where the role actually is.
+     *
+     * @return void
+     */
+    public function test_a_course_teacher_may_use_personal_keys(): void {
+        $this->resetAfterTest();
+        set_config('enablepersonalkeys', 1, 'local_aihub');
+        $course = $this->getDataGenerator()->create_course();
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+
+        $this->assertFalse(has_capability(
+            'local/aihub:usepersonalkey',
+            \context_system::instance(),
+            $teacher
+        ), 'the premise: the system context does not grant it to a course teacher');
+        $this->assertTrue(keys::personal_keys_allowed((int) $teacher->id));
+    }
+
+    /**
+     * Students, people with no role anywhere and the system user are not offered personal keys,
+     * and the site switch still wins over the capability.
+     *
+     * @return void
+     */
+    public function test_only_people_who_teach_may_use_personal_keys(): void {
+        $this->resetAfterTest();
+        set_config('enablepersonalkeys', 1, 'local_aihub');
+        $course = $this->getDataGenerator()->create_course();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+        $nobody = $this->getDataGenerator()->create_user();
+
+        $this->assertFalse(keys::personal_keys_allowed((int) $student->id));
+        $this->assertFalse(keys::personal_keys_allowed((int) $nobody->id));
+        $this->assertFalse(keys::personal_keys_allowed(0), 'cron has no user and never has a personal key');
+
+        set_config('enablepersonalkeys', 0, 'local_aihub');
+        $this->assertFalse(keys::personal_keys_allowed((int) $teacher->id));
+    }
+
+    /**
+     * Being a student in other courses takes nothing away from someone who teaches in one.
+     *
+     * @return void
+     */
+    public function test_teaching_in_one_course_is_enough(): void {
+        $this->resetAfterTest();
+        set_config('enablepersonalkeys', 1, 'local_aihub');
+        $generator = $this->getDataGenerator();
+        $user = $generator->create_user();
+        $generator->enrol_user($user->id, $generator->create_course()->id, 'student');
+        $generator->enrol_user($user->id, $generator->create_course()->id, 'student');
+        $this->assertFalse(keys::personal_keys_allowed((int) $user->id));
+
+        $generator->enrol_user($user->id, $generator->create_course()->id, 'editingteacher');
+        $this->assertTrue(keys::personal_keys_allowed((int) $user->id));
+    }
+
+    /**
+     * The personal key of a course teacher is the one resolved for them, and availability
+     * counts it, so a site with no site key at all still has an AI source for that teacher.
+     *
+     * @return void
+     */
+    public function test_a_course_teachers_personal_key_resolves(): void {
+        $this->resetAfterTest();
+        set_config('enablepersonalkeys', 1, 'local_aihub');
+        $course = $this->getDataGenerator()->create_course();
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+        keys::save_user_key(keys::PROVIDER_GEMINI, 'teacher-key', (int) $teacher->id);
+
+        $this->assertSame('teacher-key', keys::get_key(keys::PROVIDER_GEMINI, (int) $teacher->id));
+        $this->assertTrue(keys::has_any_key((int) $teacher->id));
+    }
+
+    /**
+     * A model name longer than the log column would later make every generation for that
+     * user fail, so it is cut when it is saved.
+     *
+     * @return void
+     */
+    public function test_a_long_model_name_is_cut_to_what_the_log_can_hold(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        keys::save_user_openai_model(str_repeat('m', 300), (int) $user->id);
+
+        $this->assertSame(100, \core_text::strlen(keys::get_personal_openai_model((int) $user->id)));
+    }
 }

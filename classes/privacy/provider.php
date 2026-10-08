@@ -163,6 +163,8 @@ class provider implements
                     'provider'    => $record->provider,
                     'model'       => $record->model,
                     'keysource'   => $record->keysource,
+                    'success'     => \core_privacy\local\request\transform::yesno($record->success),
+                    'errormessage' => $record->errormessage,
                     'timecreated' => \core_privacy\local\request\transform::datetime($record->timecreated),
                 ];
             }

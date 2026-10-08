@@ -84,11 +84,13 @@ class export {
     }
 
     /**
-     * Builds the localized columns and rows for the site-keys usage report.
+     * Builds the localized columns and the rows for the site-keys usage report.
      *
-     * Covers every request served by the site keys, across all users.
+     * Covers every request served by the site keys, across all users. The rows are produced
+     * one at a time while the download is written, so the size of the log does not decide how
+     * much memory the export needs.
      *
-     * @return array A two-element list with the columns and the data rows.
+     * @return array A two-element list with the columns and an iterable of data rows.
      */
     public static function build_site(): array {
         $columns = [
@@ -102,25 +104,34 @@ class export {
             get_string('mykeys_log_date', 'local_aihub'),
         ];
 
-        $records = usage_log::get_all_site();
-        $names = usage_log::user_fullnames($records);
+        return [$columns, self::site_rows()];
+    }
+
+    /**
+     * Yields the formatted rows of the site-keys report, closing the query when done.
+     *
+     * @return \Generator
+     */
+    private static function site_rows(): \Generator {
         $datetimeformat = get_string('strftimedatetime', 'core_langconfig');
+        $recordset = usage_log::site_recordset();
 
-        $rows = [];
-        foreach ($records as $record) {
-            $rows[] = [
-                usage_log::display_name($names, (int) $record->userid),
-                $record->component,
-                (string) ($record->description ?? ''),
-                $record->provider,
-                (string) ($record->model ?? ''),
-                self::status_label($record),
-                (string) ($record->errormessage ?? ''),
-                userdate($record->timecreated, $datetimeformat),
-            ];
+        try {
+            foreach ($recordset as $record) {
+                yield [
+                    usage_log::row_user_name($record),
+                    $record->component,
+                    (string) ($record->description ?? ''),
+                    $record->provider,
+                    (string) ($record->model ?? ''),
+                    self::status_label($record),
+                    (string) ($record->errormessage ?? ''),
+                    userdate($record->timecreated, $datetimeformat),
+                ];
+            }
+        } finally {
+            $recordset->close();
         }
-
-        return [$columns, $rows];
     }
 
     /**

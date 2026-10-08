@@ -24,6 +24,7 @@
 
 require(__DIR__ . '/../../config.php');
 
+use local_aihub\local\client;
 use local_aihub\local\export;
 use local_aihub\local\keys;
 use local_aihub\output\mykeys;
@@ -62,8 +63,21 @@ if (data_submitted() && confirm_sesskey()) {
         }
     }
 
-    keys::save_user_openai_url(optional_param('openai_url', '', PARAM_URL), $userid);
     keys::save_user_openai_model(optional_param('openai_model', '', PARAM_TEXT), $userid);
+
+    // An endpoint a request would refuse is not stored: saying "saved" and then never
+    // using it would leave no sign of why the provider stays silent.
+    $openaiurl = optional_param('openai_url', '', PARAM_URL);
+    $problem = (new client())->endpoint_problem($openaiurl);
+    if ($problem !== '') {
+        redirect(
+            $url,
+            get_string('mykeys_endpointrefused', 'local_aihub', $problem),
+            null,
+            \core\output\notification::NOTIFY_ERROR
+        );
+    }
+    keys::save_user_openai_url($openaiurl, $userid);
 
     redirect($url, get_string('mykeys_keyssaved', 'local_aihub'), null, \core\output\notification::NOTIFY_SUCCESS);
 }

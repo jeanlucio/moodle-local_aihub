@@ -81,12 +81,11 @@ if ($hassiteconfig) {
         ''
     ));
 
-    $settings->add(new admin_setting_configtext(
+    $settings->add(new \local_aihub\admin\setting_endpoint(
         'local_aihub/openai_baseurl',
         get_string('settings_openai_baseurl', 'local_aihub'),
         get_string('settings_openai_baseurl_desc', 'local_aihub'),
-        'https://api.openai.com/v1',
-        PARAM_URL
+        'https://api.openai.com/v1'
     ));
 
     $settings->add(new admin_setting_configtext(

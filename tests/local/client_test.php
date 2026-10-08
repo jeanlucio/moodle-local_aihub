@@ -501,18 +501,187 @@ final class client_test extends \advanced_testcase {
     }
 
     /**
-     * A 200 whose body does not hold the expected shape yields empty content rather
-     * than a warning about a missing array key.
+     * A 200 that carries no text is a failure, so the chain moves on to the next provider and
+     * the usage log does not record a success that produced nothing.
      *
      * @return void
      */
-    public function test_unexpected_body_yields_empty_content(): void {
+    public function test_a_body_without_text_is_a_failure(): void {
         $client = new stub_transport_client();
         $client->curl->body = json_encode(['unexpected' => true]);
 
         $result = $client->post_for_testing('https://x', '{}', [], 'Gemini');
 
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('Gemini', $result['message']);
+    }
+
+    /**
+     * A body that is not JSON at all, such as a gateway's HTML error page served with 200.
+     *
+     * @return void
+     */
+    public function test_a_body_that_is_not_json_is_a_failure(): void {
+        $client = new stub_transport_client();
+        $client->curl->body = '<html>Bad gateway</html>';
+
+        $result = $client->post_for_testing('https://x', '{}', [], 'OpenAI');
+
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('OpenAI', $result['message']);
+    }
+
+    /**
+     * Gemini answers 200 without candidates when it blocks a prompt, and says why.
+     *
+     * @return void
+     */
+    public function test_a_blocked_gemini_prompt_reports_the_reason(): void {
+        $client = new stub_transport_client();
+        $client->curl->body = json_encode(['promptFeedback' => ['blockReason' => 'SAFETY']]);
+
+        $result = $client->post_for_testing('https://x', '{}', [], 'Gemini');
+
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('SAFETY', $result['message']);
+    }
+
+    /**
+     * Gemini also stops a generation mid-way and leaves no parts, giving the reason apart.
+     *
+     * @return void
+     */
+    public function test_a_gemini_candidate_without_parts_reports_the_finish_reason(): void {
+        $client = new stub_transport_client();
+        $client->curl->body = json_encode(['candidates' => [['finishReason' => 'RECITATION']]]);
+
+        $result = $client->post_for_testing('https://x', '{}', [], 'Gemini');
+
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('RECITATION', $result['message']);
+    }
+
+    /**
+     * An OpenAI-style answer with an empty message, as a content filter produces.
+     *
+     * @return void
+     */
+    public function test_an_empty_chat_completion_reports_the_finish_reason(): void {
+        $client = new stub_transport_client();
+        $client->curl->body = json_encode(['choices' => [['message' => ['content' => ''], 'finish_reason' => 'content_filter']]]);
+
+        $result = $client->post_for_testing('https://x', '{}', [], 'Groq');
+
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('content_filter', $result['message']);
+    }
+
+    /**
+     * The next provider answers when the first one returns nothing.
+     *
+     * @return void
+     */
+    public function test_an_empty_answer_hands_over_to_the_next_provider(): void {
+        $this->resetAfterTest();
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+
+        $client = new class extends stub_transport_client {
+            /** @var string[] Providers that were asked, in order. */
+            public array $asked = [];
+
+            #[\Override]
+            protected function http_post(string $url, string $payload, array $headers, string $source): array {
+                $this->asked[] = $source;
+                $this->curl->body = $source === 'Gemini'
+                    ? json_encode(['promptFeedback' => ['blockReason' => 'SAFETY']])
+                    : json_encode(['choices' => [['message' => ['content' => 'from groq']]]]);
+
+                return parent::http_post($url, $payload, $headers, $source);
+            }
+        };
+
+        $result = $client->generate_text('', 'hello', false, 0);
+
         $this->assertTrue($result['success']);
-        $this->assertSame('', $result['data']);
+        $this->assertSame('from groq', $result['data']);
+        $this->assertSame(['Gemini', 'Groq'], $client->asked);
+        $this->assertFalse($result['attempts'][0]['success']);
+        $this->assertTrue($result['attempts'][1]['success']);
+    }
+
+    /**
+     * A real answer is still a success.
+     *
+     * @return void
+     */
+    public function test_a_body_with_text_is_a_success(): void {
+        $client = new stub_transport_client();
+        $client->curl->body = json_encode(['candidates' => [['content' => ['parts' => [['text' => 'hello']]]]]]);
+
+        $result = $client->post_for_testing('https://x', '{}', [], 'Gemini');
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('hello', $result['data']);
+    }
+
+    /**
+     * An endpoint that is refused leaves a failed attempt and a reason, instead of vanishing
+     * from the log and from the answer.
+     *
+     * @return void
+     */
+    public function test_a_refused_endpoint_is_reported(): void {
+        $this->resetAfterTest();
+        set_config('openai_key', 'site-openai', 'local_aihub');
+        set_config('openai_baseurl', 'http://192.168.0.10:11434/v1', 'local_aihub');
+
+        $result = (new client())->generate_text('', 'hello', false, 0);
+
+        $this->assertFalse($result['success']);
+        $this->assertNotSame('', $result['message']);
+        $this->assertCount(1, $result['attempts']);
+        $this->assertFalse($result['attempts'][0]['success']);
+        $this->assertSame('OpenAI', $result['attempts'][0]['provider']);
+        $this->assertNotSame('', $result['attempts'][0]['message']);
+    }
+
+    /**
+     * The same rule the call applies is available up front, to refuse the value on save.
+     *
+     * @return void
+     */
+    public function test_endpoint_problem_matches_what_the_call_accepts(): void {
+        $client = new client();
+
+        $this->assertNotSame('', $client->endpoint_problem('http://8.8.8.8/v1'));
+        $this->assertNotSame('', $client->endpoint_problem('https://10.0.0.5/v1'));
+        $this->assertNotSame('', $client->endpoint_problem('https://localhost/v1'));
+        $this->assertSame('', $client->endpoint_problem('https://8.8.8.8/v1'));
+        $this->assertSame('', $client->endpoint_problem(''), 'empty means the default endpoint');
+    }
+
+    /**
+     * A course teacher's own key is tried first when the hub is called on their behalf,
+     * which is what lets work running without a user, such as cron, use the owner's key.
+     *
+     * @return void
+     */
+    public function test_a_course_teachers_personal_tier_is_tried_first(): void {
+        $this->resetAfterTest();
+        set_config('enablepersonalkeys', 1, 'local_aihub');
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        $course = $this->getDataGenerator()->create_course();
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+        keys::save_user_key(keys::PROVIDER_GROQ, 'personal-groq', (int) $teacher->id);
+
+        $client = new mock_client();
+        $client->results['Groq'] = ['success' => true, 'data' => 'ok', 'provider' => 'Groq', 'model' => 'm'];
+
+        $result = $client->generate_text('', 'hello', false, (int) $teacher->id);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('personal', $result['keysource']);
+        $this->assertSame(['Groq'], $client->calls);
     }
 }

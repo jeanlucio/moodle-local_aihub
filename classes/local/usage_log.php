@@ -62,10 +62,10 @@ class usage_log {
 
         $record = new \stdClass();
         $record->userid = $userid;
-        $record->component = $component;
-        $record->description = $description !== '' ? $description : null;
+        $record->component = \core_text::substr($component, 0, 100);
+        $record->description = $description !== '' ? \core_text::substr($description, 0, 255) : null;
         $record->provider = $provider;
-        $record->model = $model !== '' ? $model : null;
+        $record->model = $model !== '' ? \core_text::substr($model, 0, keys::MODEL_MAX_LENGTH) : null;
         $record->keysource = $keysource !== '' ? $keysource : null;
         $record->success = $success ? 1 : 0;
         $record->errormessage = $errormessage !== '' ? \core_text::substr($errormessage, 0, 255) : null;
@@ -143,19 +143,56 @@ class usage_log {
     }
 
     /**
-     * Returns every request served by the site keys, across all users (for export).
+     * Returns every row logged against a site key, newest first, as a recordset.
      *
-     * @return array Array of record objects.
+     * A recordset instead of an array: a year of log under heavy use is far more rows than
+     * should be held in memory just to be written to a download. Each row carries the name
+     * fields of its user, read by {@see self::row_user_name()}, so no second lookup is needed.
+     *
+     * The caller must close the recordset.
+     *
+     * @return \moodle_recordset
      */
-    public static function get_all_site(): array {
+    public static function site_recordset(): \moodle_recordset {
         global $DB;
 
-        return $DB->get_records(
-            self::TABLE,
-            ['keysource' => 'site'],
-            'timecreated DESC',
-            'id, userid, component, description, provider, model, success, errormessage, timecreated'
-        );
+        $namecolumns = [];
+        foreach (\core_user\fields::get_name_fields() as $field) {
+            $namecolumns[] = 'u.' . $field . ' AS user_' . $field;
+        }
+
+        $sql = "SELECT l.id, l.userid, l.component, l.description, l.provider, l.model, l.success,
+                       l.errormessage, l.timecreated, " . implode(', ', $namecolumns) . "
+                  FROM {" . self::TABLE . "} l
+             LEFT JOIN {user} u ON u.id = l.userid
+                 WHERE l.keysource = :keysource
+              ORDER BY l.timecreated DESC, l.id DESC";
+
+        return $DB->get_recordset_sql($sql, ['keysource' => 'site']);
+    }
+
+    /**
+     * Returns the display name of the user a {@see self::site_recordset()} row belongs to.
+     *
+     * @param \stdClass $row A row from the site recordset.
+     * @return string
+     */
+    public static function row_user_name(\stdClass $row): string {
+        if ((int) $row->userid === 0) {
+            return get_string('report_systemuser', 'local_aihub');
+        }
+
+        // A user row that no longer exists comes back with every name column empty.
+        if (!isset($row->user_firstname) && !isset($row->user_lastname)) {
+            return get_string('report_unknownuser', 'local_aihub', (int) $row->userid);
+        }
+
+        $user = new \stdClass();
+        foreach (\core_user\fields::get_name_fields() as $field) {
+            $user->{$field} = $row->{'user_' . $field} ?? '';
+        }
+
+        return fullname($user);
     }
 
     /**

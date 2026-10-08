@@ -143,4 +143,33 @@ final class lib_test extends advanced_testcase {
 
         $this->assertFalse($this->entry_added_for($user));
     }
+
+    /**
+     * A teacher whose role comes from a course enrolment sees the entry. The other cases
+     * grant a system role, which is the one way the old check happened to work.
+     *
+     * @return void
+     */
+    public function test_entry_is_added_for_a_course_teacher(): void {
+        set_config('enablepersonalkeys', 1, 'local_aihub');
+        $course = $this->getDataGenerator()->create_course();
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+        $this->setUser($teacher);
+
+        $this->assertTrue($this->entry_added_for($teacher));
+    }
+
+    /**
+     * A student never sees the entry, however many courses they are in.
+     *
+     * @return void
+     */
+    public function test_entry_is_not_added_for_a_student(): void {
+        set_config('enablepersonalkeys', 1, 'local_aihub');
+        $course = $this->getDataGenerator()->create_course();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $this->setUser($student);
+
+        $this->assertFalse($this->entry_added_for($student));
+    }
 }

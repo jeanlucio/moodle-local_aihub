@@ -132,7 +132,12 @@ final class usage_log_test extends \advanced_testcase {
         usage_log::record((int) $user->id, 'report_unlocker', 'Restriction help', 'OpenAI', 'gpt', true, 'personal');
         usage_log::record((int) $user->id, 'local_playergames', 'Legacy row', 'Gemini', 'flash', true);
 
-        $rows = usage_log::get_all_site();
+        $recordset = usage_log::site_recordset();
+        $rows = [];
+        foreach ($recordset as $row) {
+            $rows[$row->id] = $row;
+        }
+        $recordset->close();
         $this->assertCount(2, $rows);
 
         $components = array_column(array_values($rows), 'component');
@@ -221,5 +226,74 @@ final class usage_log_test extends \advanced_testcase {
         $components = array_column(array_values($rows), 'component');
         $this->assertContains('local_aiassess', $components);
         $this->assertContains('report_unlocker', $components);
+    }
+
+    /**
+     * Values longer than their columns are cut instead of making the insert throw, which
+     * would lose a generation that was already paid for.
+     *
+     * @return void
+     */
+    public function test_record_cuts_values_to_the_column_sizes(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        $id = usage_log::record(
+            (int) $user->id,
+            str_repeat('c', 150),
+            str_repeat('d', 400),
+            'OpenAI',
+            str_repeat('m', 150),
+            true,
+            'personal'
+        );
+
+        $row = $DB->get_record(usage_log::TABLE, ['id' => $id], '*', MUST_EXIST);
+        $this->assertSame(100, \core_text::strlen($row->component));
+        $this->assertSame(255, \core_text::strlen($row->description));
+        $this->assertSame(100, \core_text::strlen($row->model));
+    }
+
+    /**
+     * Cutting counts characters, not bytes, so accented text is not split mid-character.
+     *
+     * @return void
+     */
+    public function test_record_cuts_multibyte_text_on_characters(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        $id = usage_log::record((int) $user->id, 'local_x', str_repeat('ã', 300), 'Gemini', '', true);
+
+        $row = $DB->get_record(usage_log::TABLE, ['id' => $id], '*', MUST_EXIST);
+        $this->assertSame(str_repeat('ã', 255), $row->description);
+    }
+
+    /**
+     * The site report rows come from a recordset, so the whole year of log is never held in
+     * memory at once, and each row carries the name of its user.
+     *
+     * @return void
+     */
+    public function test_site_rows_are_streamed_with_the_user_name(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user(['firstname' => 'Ana', 'lastname' => 'Souza']);
+        usage_log::record((int) $user->id, 'local_x', 'one', 'Gemini', 'flash', true, 'site');
+        usage_log::record((int) $user->id, 'local_x', 'two', 'Groq', 'llama', false, 'site', 'down');
+        usage_log::record((int) $user->id, 'local_x', 'mine', 'OpenAI', 'gpt', true, 'personal');
+
+        $recordset = usage_log::site_recordset();
+        $this->assertInstanceOf(\moodle_recordset::class, $recordset);
+        $rows = [];
+        foreach ($recordset as $row) {
+            $rows[] = $row;
+        }
+        $recordset->close();
+
+        $this->assertCount(2, $rows);
+        $this->assertSame(['two', 'one'], array_column($rows, 'description'));
+        $this->assertSame(fullname($user), usage_log::row_user_name($rows[0]));
     }
 }

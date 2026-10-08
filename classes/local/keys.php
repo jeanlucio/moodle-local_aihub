@@ -36,6 +36,9 @@ namespace local_aihub\local;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class keys {
+    /** @var int Longest model name kept, the size of the usage log column that later records it. */
+    public const MODEL_MAX_LENGTH = 100;
+
     /** @var string Gemini provider identifier. */
     const PROVIDER_GEMINI = 'gemini';
 
@@ -63,8 +66,11 @@ class keys {
     /**
      * Returns true when personal keys may be used for the given user.
      *
-     * Requires both the site toggle (enablepersonalkeys) and the per-user
-     * capability local/aihub:usepersonalkey at system context.
+     * Requires both the site toggle (enablepersonalkeys) and the capability
+     * local/aihub:usepersonalkey. Teachers get their role from a course enrolment, whose
+     * capabilities never reach the system context, so the capability counts when it is held
+     * at the system level or in any course. Without a user, as in cron, there is no personal
+     * key to use.
      *
      * @param int|null $userid Defaults to $USER->id.
      * @return bool
@@ -76,11 +82,16 @@ class keys {
             return false;
         }
         $userid = $userid ?? (int) $USER->id;
-        return has_capability(
-            'local/aihub:usepersonalkey',
-            \context_system::instance(),
-            $userid
-        );
+        if ($userid <= 0) {
+            return false;
+        }
+        $capability = 'local/aihub:usepersonalkey';
+
+        if (has_capability($capability, \context_system::instance(), $userid)) {
+            return true;
+        }
+
+        return !empty(get_user_capability_course($capability, $userid, false, '', '', 1));
     }
 
     /**
@@ -262,6 +273,7 @@ class keys {
         global $USER;
 
         $userid = $userid ?? (int) $USER->id;
+        $model = \core_text::substr($model, 0, self::MODEL_MAX_LENGTH);
         if ($model === '') {
             unset_user_preference('local_aihub_openai_model', $userid);
         } else {

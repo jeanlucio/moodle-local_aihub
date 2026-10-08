@@ -230,4 +230,53 @@ final class privacy_provider_test extends \advanced_testcase {
 
         $this->assertSame(1, $DB->count_records('local_aihub_log'));
     }
+
+    /**
+     * The export carries every column the provider declares for the log, including whether
+     * each attempt worked and why it did not.
+     *
+     * @return void
+     */
+    public function test_export_carries_the_outcome_of_each_attempt(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        usage_log::record((int) $user->id, 'mod_codereview', 'Review', 'Gemini', 'flash', false, 'site', 'Gemini: HTTP 401');
+
+        $context = context_user::instance($user->id);
+        provider::export_user_data(new approved_contextlist($user, 'local_aihub', [$context->id]));
+
+        $data = writer::with_context($context)->get_data([get_string('mykeys_log_heading', 'local_aihub')]);
+        $row = $data->logs[0];
+        $this->assertArrayHasKey('success', $row);
+        $this->assertArrayHasKey('errormessage', $row);
+        $this->assertSame('Gemini: HTTP 401', $row['errormessage']);
+    }
+
+    /**
+     * Whatever the provider declares about the log table is what the export carries, so a
+     * column added later cannot be declared and then left out of the export.
+     *
+     * @return void
+     */
+    public function test_export_covers_every_declared_log_field(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        usage_log::record((int) $user->id, 'mod_codereview', 'Review', 'Gemini', 'flash', true, 'site');
+
+        $collection = provider::get_metadata(new \core_privacy\local\metadata\collection('local_aihub'));
+        $declared = [];
+        foreach ($collection->get_collection() as $item) {
+            if ($item instanceof \core_privacy\local\metadata\types\database_table && $item->get_name() === 'local_aihub_log') {
+                $declared = array_keys($item->get_privacy_fields());
+            }
+        }
+        // The user id is the data subject itself and the export is already scoped to them.
+        $declared = array_values(array_diff($declared, ['userid']));
+
+        $context = context_user::instance($user->id);
+        provider::export_user_data(new approved_contextlist($user, 'local_aihub', [$context->id]));
+        $data = writer::with_context($context)->get_data([get_string('mykeys_log_heading', 'local_aihub')]);
+
+        $this->assertEqualsCanonicalizing($declared, array_keys($data->logs[0]));
+    }
 }

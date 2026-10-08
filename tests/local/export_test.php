@@ -95,6 +95,7 @@ final class export_test extends \advanced_testcase {
         usage_log::record((int) $user->id, 'report_unlocker', 'Restriction help', 'OpenAI', 'gpt', true, 'personal');
 
         [$columns, $rows] = export::build_site();
+        $rows = iterator_to_array($rows, false);
 
         // Eight columns (user first) and only the two site-key rows.
         $this->assertCount(8, $columns);
@@ -104,5 +105,22 @@ final class export_test extends \advanced_testcase {
         $names = array_column($rows, 0);
         $this->assertContains(fullname($user), $names);
         $this->assertContains(fullname($other), $names);
+    }
+
+    /**
+     * The site export is a stream, not an array, so a log with a year of rows is formatted
+     * one row at a time while the download is written.
+     *
+     * @return void
+     */
+    public function test_build_site_is_a_stream(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        usage_log::record((int) $user->id, 'local_playergames', 'Concepts: test', 'Gemini', 'flash', true, 'site');
+
+        [, $rows] = export::build_site();
+
+        $this->assertInstanceOf(\Traversable::class, $rows);
+        $this->assertNotInstanceOf(\Countable::class, $rows);
     }
 }
