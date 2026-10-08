@@ -41,6 +41,7 @@
     * logactionlabel string Column header for what was done
     * logproviderlabel string Column header for provider
     * logmodellabel string Column header for model
+    * logkeysourcelabel string Column header for whose key served the request
     * logdatelabel string Column header for date
     * logstatuslabel string Column header for the attempt outcome
     * loghasrows boolean Whether there is any history
@@ -76,12 +77,13 @@
         "logempty": "No AI requests yet.",
         "logproviderlabel": "Provider",
         "logmodellabel": "Model",
+        "logkeysourcelabel": "Key",
         "logdatelabel": "Date",
         "logstatuslabel": "Status",
         "logactionlabel": "What was done",
         "loghasrows": true,
         "logrows": [
-            {"description": "Concepts: History of Brazil", "provider": "Gemini", "providericon": "fa-google", "model": "gemini-flash-latest", "failed": false, "statuslabel": "Succeeded", "errormessage": "", "date": "1 Jan 2026"}
+            {"description": "Concepts: History of Brazil", "provider": "Gemini", "providericon": "fa-google", "model": "gemini-flash-latest", "keysourcelabel": "Site key", "failed": false, "statuslabel": "Succeeded", "errormessage": "", "date": "1 Jan 2026"}
         ],
         "downloadcsvurl": "https://example.com/local/aihub/mykeys.php?download=csv",
         "downloadexcelurl": "https://example.com/local/aihub/mykeys.php?download=excel",
@@ -148,6 +150,7 @@
                     <th scope="col">{{logactionlabel}}</th>
                     <th scope="col">{{logproviderlabel}}</th>
                     <th scope="col">{{logmodellabel}}</th>
+                    <th scope="col">{{logkeysourcelabel}}</th>
                     <th scope="col">{{logstatuslabel}}</th>
                     <th scope="col">{{logdatelabel}}</th>
                 </tr>
@@ -158,6 +161,7 @@
                         <td>{{description}}</td>
                         <td><i class="fa {{providericon}}" aria-hidden="true"></i> {{provider}}</td>
                         <td>{{model}}</td>
+                        <td>{{keysourcelabel}}</td>
                         <td>
                             {{#failed}}
                                 <span class="badge bg-danger text-white">{{statuslabel}}</span>

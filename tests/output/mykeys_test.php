@@ -141,4 +141,30 @@ final class mykeys_test extends \advanced_testcase {
         $this->assertSame('Gemini: invalid key', $row['errormessage']);
         $this->assertSame(get_string('report_failed', 'local_aihub'), $row['statuslabel']);
     }
+
+    /**
+     * The history says whose key served each request. Without it a teacher who only ever used
+     * the site's keys reads "success" as something spent on their own account.
+     *
+     * @return void
+     */
+    public function test_log_rows_say_whose_key_was_used(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+
+        usage_log::record((int) $user->id, 'x', 'legacy', 'Gemini', '', true);
+        usage_log::record((int) $user->id, 'x', 'site', 'Gemini', '', true, 'site');
+        usage_log::record((int) $user->id, 'x', 'mine', 'Gemini', '', true, 'personal');
+
+        $output = $PAGE->get_renderer('core');
+        $context = (new mykeys((int) $user->id))->export_for_template($output);
+
+        $byaction = array_column($context['logrows'], 'keysourcelabel', 'description');
+        $this->assertSame(get_string('keysource_personal', 'local_aihub'), $byaction['mine']);
+        $this->assertSame(get_string('keysource_site', 'local_aihub'), $byaction['site']);
+        $this->assertSame('', $byaction['legacy'], 'rows from before the origin was recorded say nothing');
+        $this->assertSame(get_string('mykeys_log_keysource', 'local_aihub'), $context['logkeysourcelabel']);
+    }
 }

@@ -92,6 +92,7 @@ class mykeys implements renderable, templatable {
             'logactionlabel'       => get_string('mykeys_log_action', 'local_aihub'),
             'logproviderlabel'     => get_string('mykeys_log_provider', 'local_aihub'),
             'logmodellabel'        => get_string('mykeys_log_model', 'local_aihub'),
+            'logkeysourcelabel'    => get_string('mykeys_log_keysource', 'local_aihub'),
             'logdatelabel'         => get_string('mykeys_log_date', 'local_aihub'),
             'logstatuslabel'       => get_string('report_status', 'local_aihub'),
             'logrows'              => $logrows,
@@ -155,6 +156,7 @@ class mykeys implements renderable, templatable {
                 'provider'     => $record->provider,
                 'providericon' => self::PROVIDER_ICONS[$record->provider] ?? 'fa-cog',
                 'model'        => (string) ($record->model ?? ''),
+                'keysourcelabel' => usage_log::keysource_label($record->keysource ?? null),
                 'failed'       => $failed,
                 'statuslabel'  => $failed
                     ? get_string('report_failed', 'local_aihub')

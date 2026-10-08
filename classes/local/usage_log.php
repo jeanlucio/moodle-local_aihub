@@ -113,8 +113,24 @@ class usage_log {
             self::TABLE,
             ['userid' => $userid],
             'timecreated DESC',
-            'id, component, description, provider, model, success, errormessage, timecreated'
+            'id, component, description, provider, model, keysource, success, errormessage, timecreated'
         );
+    }
+
+    /**
+     * Names the origin of the key that served a request, for the user's own history and download.
+     *
+     * Rows written before the origin was recorded have none, and say nothing rather than guess.
+     *
+     * @param string|null $keysource The stored origin: personal, site or empty.
+     * @return string
+     */
+    public static function keysource_label(?string $keysource): string {
+        if ($keysource === 'personal' || $keysource === 'site') {
+            return get_string('keysource_' . $keysource, 'local_aihub');
+        }
+
+        return '';
     }
 
     /**

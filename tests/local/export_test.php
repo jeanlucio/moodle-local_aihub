@@ -50,15 +50,15 @@ final class export_test extends \advanced_testcase {
 
         [$columns, $rows] = export::build((int) $user->id);
 
-        // Seven columns, and every one of the user's rows (not capped at 15).
-        $this->assertCount(7, $columns);
+        // Eight columns, and every one of the user's rows (not capped at 15).
+        $this->assertCount(8, $columns);
         $this->assertCount(20, $rows);
-        $this->assertCount(7, $rows[0]);
+        $this->assertCount(8, $rows[0]);
         $this->assertSame('local_playergames', $rows[0][0]);
         $this->assertSame('Concepts: test', $rows[0][1]);
         $this->assertSame('Gemini', $rows[0][2]);
-        $this->assertSame(get_string('report_succeeded', 'local_aihub'), $rows[0][4]);
-        $this->assertSame('', $rows[0][5]);
+        $this->assertSame(get_string('report_succeeded', 'local_aihub'), $rows[0][5]);
+        $this->assertSame('', $rows[0][6]);
     }
 
     /**
@@ -75,8 +75,8 @@ final class export_test extends \advanced_testcase {
 
         [, $rows] = export::build((int) $user->id);
 
-        $this->assertSame(get_string('report_failed', 'local_aihub'), $rows[0][4]);
-        $this->assertSame('Gemini: down', $rows[0][5]);
+        $this->assertSame(get_string('report_failed', 'local_aihub'), $rows[0][5]);
+        $this->assertSame('Gemini: down', $rows[0][6]);
     }
 
     /**
@@ -122,5 +122,28 @@ final class export_test extends \advanced_testcase {
 
         $this->assertInstanceOf(\Traversable::class, $rows);
         $this->assertNotInstanceOf(\Countable::class, $rows);
+    }
+
+    /**
+     * The download carries the origin of the key too, so what was spent on the user's own keys
+     * can be told apart from what the site paid for.
+     *
+     * @return void
+     */
+    public function test_build_says_whose_key_was_used(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        usage_log::record((int) $user->id, 'mod_x', 'mine', 'Gemini', 'flash', true, 'personal');
+        usage_log::record((int) $user->id, 'mod_x', 'theirs', 'Groq', 'llama', true, 'site');
+        usage_log::record((int) $user->id, 'mod_x', 'old', 'Groq', 'llama', true);
+
+        [$columns, $rows] = export::build((int) $user->id);
+
+        $position = array_search(get_string('mykeys_log_keysource', 'local_aihub'), $columns, true);
+        $this->assertNotFalse($position, 'the key column is part of the export');
+        $byaction = array_column($rows, $position, 1);
+        $this->assertSame(get_string('keysource_personal', 'local_aihub'), $byaction['mine']);
+        $this->assertSame(get_string('keysource_site', 'local_aihub'), $byaction['theirs']);
+        $this->assertSame('', $byaction['old']);
     }
 }
