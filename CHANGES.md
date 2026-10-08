@@ -4,6 +4,36 @@ All notable changes to this plugin are documented here.
 
 ---
 
+## [v1.3.3] — 2026-10-08
+
+### Added
+- The history on *My AI keys*, and its CSV and Excel downloads, now say whether each request
+  used your own key or the site's key. Entries recorded before this version leave it blank.
+
+### Fixed
+- Teachers whose role comes from a course enrolment, which is the usual case, could not use
+  personal AI keys: the capability was only looked for at the site level, so *My AI keys*, its
+  link in Preferences and the key itself were available to administrators and to managers with
+  a site-level role, and to nobody else. The capability now counts when it is held at the site
+  level or in any course.
+- An answer that arrives without any text, such as a prompt the provider blocked, a generation
+  it interrupted or an error page served by a gateway, was recorded as a success and stopped
+  the search for another provider. It is now a failed attempt that carries the reason the
+  provider gave, so the next provider is tried.
+- An OpenAI-compatible endpoint that requests refuse (plain http, localhost, a private network)
+  was accepted when saved and then ignored on every request, leaving nothing in the usage log.
+  It is now refused when saved, in the site settings and in *My AI keys*, with the reason, and
+  an attempt made with one is recorded as a failure. An address that cannot be read no longer
+  erases the endpoint that was already saved.
+- A long model name or description made the usage log insert fail after the text had already
+  been generated, losing it. Values are now cut to the size of their columns, and the personal
+  model name is limited to 100 characters.
+- The personal data export now includes the result and the error message of each attempt,
+  which the privacy metadata already declared.
+- Exporting the site usage report no longer loads the whole log into memory.
+- On Moodle 4.5 the red "failed" badge showed dark text on red, about 3:1; it now has white
+  text, 5.3:1.
+
 ## [v1.3.2] — 2026-09-27
 
 ### Fixed
