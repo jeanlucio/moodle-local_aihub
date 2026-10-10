@@ -64,9 +64,9 @@ class usage_log {
         $record->userid = $userid;
         $record->component = \core_text::substr($component, 0, 100);
         $record->description = $description !== '' ? \core_text::substr($description, 0, 255) : null;
-        $record->provider = $provider;
+        $record->provider = \core_text::substr($provider, 0, 40);
         $record->model = $model !== '' ? \core_text::substr($model, 0, keys::MODEL_MAX_LENGTH) : null;
-        $record->keysource = $keysource !== '' ? $keysource : null;
+        $record->keysource = $keysource !== '' ? \core_text::substr($keysource, 0, 20) : null;
         $record->success = $success ? 1 : 0;
         $record->errormessage = $errormessage !== '' ? \core_text::substr($errormessage, 0, 255) : null;
         $record->timecreated = time();

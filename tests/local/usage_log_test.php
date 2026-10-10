@@ -243,16 +243,18 @@ final class usage_log_test extends \advanced_testcase {
             (int) $user->id,
             str_repeat('c', 150),
             str_repeat('d', 400),
-            'OpenAI',
+            str_repeat('p', 60),
             str_repeat('m', 150),
             true,
-            'personal'
+            str_repeat('k', 30)
         );
 
         $row = $DB->get_record(usage_log::TABLE, ['id' => $id], '*', MUST_EXIST);
         $this->assertSame(100, \core_text::strlen($row->component));
         $this->assertSame(255, \core_text::strlen($row->description));
+        $this->assertSame(40, \core_text::strlen($row->provider));
         $this->assertSame(100, \core_text::strlen($row->model));
+        $this->assertSame(20, \core_text::strlen($row->keysource));
     }
 
     /**
