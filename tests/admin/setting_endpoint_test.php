@@ -28,6 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->libdir . '/adminlib.php');
+require_once($CFG->dirroot . '/local/aihub/tests/fixtures/dns_stub_client.php');
 
 /**
  * Tests for {@see setting_endpoint}.
@@ -90,5 +91,31 @@ final class setting_endpoint_test extends \advanced_testcase {
 
         $this->assertNotSame('', $error);
         $this->assertSame('https://8.8.8.8/v1', get_config('local_aihub', 'openai_baseurl'));
+    }
+
+    /**
+     * The plugin's own default is written without a DNS lookup, as it is on install, so a
+     * server that cannot resolve names still gets it. Another host that resolves to nothing
+     * is still refused.
+     *
+     * @return void
+     */
+    public function test_the_default_is_saved_without_dns(): void {
+        $this->resetAfterTest();
+        $default = 'https://api.openai.com/v1';
+        $setting = new class ('local_aihub/openai_baseurl', 'Endpoint', 'Help', $default) extends setting_endpoint {
+            #[\Override]
+            protected function client(): \local_aihub\local\client {
+                $client = new \local_aihub\local\dns_stub_client();
+                $client->dnsresult = [];
+
+                return $client;
+            }
+        };
+
+        $this->assertSame('', $setting->write_setting('https://api.openai.com/v1'));
+        $this->assertSame('https://api.openai.com/v1', get_config('local_aihub', 'openai_baseurl'));
+        $this->assertNotSame('', $setting->write_setting('https://api.example.com/v1'));
+        $this->assertSame('https://api.openai.com/v1', get_config('local_aihub', 'openai_baseurl'));
     }
 }

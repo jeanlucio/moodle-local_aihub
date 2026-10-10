@@ -56,8 +56,25 @@ class setting_endpoint extends \admin_setting_configtext {
             return $valid;
         }
 
-        $problem = (new client())->endpoint_problem(trim((string) $data));
+        // The plugin's own default is a known public endpoint. Checking it needs a DNS lookup,
+        // and where there is none the default could not even be applied on install. Requests
+        // still check it, against the addresses they connect to.
+        $url = trim((string) $data);
+        if ($url === $this->get_defaultsetting()) {
+            return true;
+        }
+
+        $problem = $this->client()->endpoint_problem($url);
 
         return $problem === '' ? true : $problem;
+    }
+
+    /**
+     * Builds the client whose rule the value is checked against.
+     *
+     * @return client
+     */
+    protected function client(): client {
+        return new client();
     }
 }
