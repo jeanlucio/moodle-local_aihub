@@ -10,7 +10,7 @@ No. The plugin installs and runs without any key — it simply reports that no s
 
 - **Google Gemini** — https://ai.google.dev/ — model: `gemini-flash-latest` (rolling alias, always Google's current Flash release; fixed, not configurable)
 - **Groq** — https://console.groq.com/ — model: `openai/gpt-oss-120b` (fixed, not configurable; see *Groq model choice* below)
-- **DeepSeek** — https://deepseek.com/ — model: `deepseek-v4-flash` (fixed, not configurable)
+- **DeepSeek** — https://deepseek.com/ — model: `deepseek-flash` (fixed, not configurable)
 - **OpenAI-compatible APIs** — any provider that follows the OpenAI API format (OpenRouter, self-hosted models via LM Studio, an Ollama proxy, etc.) — model: configurable per key (site setting / personal key), defaults to `gpt-4o-mini` when left empty
 
 These services operate under their own terms of service and privacy policies.

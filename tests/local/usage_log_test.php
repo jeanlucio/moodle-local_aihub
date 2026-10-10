@@ -72,7 +72,7 @@ final class usage_log_test extends \advanced_testcase {
             'local_playergames',
             'Concepts: test',
             'DeepSeek',
-            'deepseek-v4-flash',
+            'deepseek-flash',
             false,
             'site',
             'DeepSeek: model not found'

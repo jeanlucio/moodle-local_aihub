@@ -45,7 +45,7 @@ final class report_test extends \advanced_testcase {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();
 
-        usage_log::record((int) $user->id, 'local_aiassess', 'Forum review', 'DeepSeek', 'deepseek-v4-flash', true, 'site');
+        usage_log::record((int) $user->id, 'local_aiassess', 'Forum review', 'DeepSeek', 'deepseek-flash', true, 'site');
         // A personal-key row must never appear in the site-keys report.
         usage_log::record((int) $user->id, 'report_unlocker', 'Restriction help', 'Groq', '', true, 'personal');
 

@@ -10,7 +10,7 @@ Não. O plugin instala e funciona sem nenhuma chave — apenas informa que não 
 
 - **Google Gemini** — https://ai.google.dev/ — modelo: `gemini-flash-latest` (alias rolante, sempre a versão Flash atual do Google; fixo, não configurável)
 - **Groq** — https://console.groq.com/ — modelo: `openai/gpt-oss-120b` (fixo, não configurável; ver *Escolha do modelo Groq* abaixo)
-- **DeepSeek** — https://deepseek.com/ — modelo: `deepseek-v4-flash` (fixo, não configurável)
+- **DeepSeek** — https://deepseek.com/ — modelo: `deepseek-flash` (fixo, não configurável)
 - **APIs compatíveis com OpenAI** — qualquer provedor que siga o formato da API OpenAI (OpenRouter, modelos auto-hospedados via LM Studio, um proxy Ollama, etc.) — modelo: configurável por chave (config de site / chave pessoal), padrão `gpt-4o-mini` quando vazio
 
 Esses serviços operam sob seus próprios termos de serviço e políticas de privacidade.

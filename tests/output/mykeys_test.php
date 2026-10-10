@@ -81,7 +81,7 @@ final class mykeys_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $this->setUser($user);
 
-        usage_log::record((int) $user->id, 'local_aiassess', 'Forum review', 'DeepSeek', 'deepseek-v4-flash', true);
+        usage_log::record((int) $user->id, 'local_aiassess', 'Forum review', 'DeepSeek', 'deepseek-flash', true);
         usage_log::record((int) $user->id, 'local_aiassess', 'Unknown source', 'SomeFutureProvider', '', true);
 
         $output = $PAGE->get_renderer('core');

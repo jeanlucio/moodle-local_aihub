@@ -283,7 +283,7 @@ class client {
     protected function call_deepseek(string $system, string $user, string $key, bool $jsonmode): array {
         $url = 'https://api.deepseek.com/chat/completions';
         $data = [
-            'model' => 'deepseek-v4-flash',
+            'model' => 'deepseek-flash',
             'messages' => $this->build_chat_messages($system, $user),
         ];
         if ($jsonmode) {
@@ -294,7 +294,7 @@ class client {
             json_encode($data),
             ['Authorization: Bearer ' . $key, 'Content-Type: application/json'],
             'DeepSeek'
-        ) + ['model' => 'deepseek-v4-flash'];
+        ) + ['model' => 'deepseek-flash'];
     }
 
     /**

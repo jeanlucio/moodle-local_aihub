@@ -369,7 +369,7 @@ final class client_test extends \advanced_testcase {
             'success'  => true,
             'data'     => 'ok',
             'provider' => 'DeepSeek',
-            'model'    => 'deepseek-v4-flash',
+            'model'    => 'deepseek-flash',
         ];
 
         $result = $client->generate_text('', 'hello');
@@ -527,7 +527,7 @@ final class client_test extends \advanced_testcase {
 
         $expected = [
             'Groq' => ['https://api.groq.com/openai/v1/chat/completions', 'openai/gpt-oss-120b'],
-            'DeepSeek' => ['https://api.deepseek.com/chat/completions', 'deepseek-v4-flash'],
+            'DeepSeek' => ['https://api.deepseek.com/chat/completions', 'deepseek-flash'],
             'OpenAI' => ['https://api.example.com/v1/chat/completions', 'some-model'],
         ];
 
