@@ -4,6 +4,33 @@ All notable changes to this plugin are documented here.
 
 ---
 
+## [v1.3.4] — 2026-10-10
+
+### Security
+- Requests to the AI providers now verify the server's certificate. Moodle's HTTP client leaves
+  that check off by default, so someone on the network path could present a certificate of their
+  own and receive the API key sent with the request.
+- Requests to an OpenAI-compatible endpoint no longer follow redirects, and they connect only to
+  the addresses the endpoint was checked against. Before, a public endpoint could redirect the
+  request, API key included, to a host that was never checked, or change its DNS answer between
+  the check and the connection.
+- The endpoint check now also refuses internal addresses it used to let through: IPv6 addresses
+  that carry an IPv4 one (such as `::ffff:127.0.0.1`), IPv6 addresses written in brackets, the
+  shared address space `100.64.0.0/10` where some clouds serve instance metadata, and a host that
+  does not resolve. Hosts and ports blocked in the site's HTTP security settings are refused when
+  the endpoint is saved.
+
+### Changed
+- DeepSeek requests now use the `deepseek-flash` model. DeepSeek no longer lists
+  `deepseek-v4-flash`, which only answered through a temporary compatibility route.
+- An OpenAI-compatible endpoint with a self-signed certificate, on a port the site does not allow
+  (only 80 and 443 by default), or known only to the server's hosts file is no longer accepted.
+
+### Fixed
+- A plugin reporting its own usage through `\local_aihub\ai::report_usage()` with a provider name
+  longer than 40 characters, or a key source longer than 20, made the usage log insert fail.
+  Values are now cut to the size of their columns.
+
 ## [v1.3.3] — 2026-10-08
 
 ### Added
