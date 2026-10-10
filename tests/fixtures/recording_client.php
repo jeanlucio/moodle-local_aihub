@@ -36,26 +36,27 @@ namespace local_aihub\local;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class recording_client extends client {
-    /** @var array[] One entry per http_post() call: url, payload, headers, source. */
+    /** @var array[] One entry per http_post() call: url, payload, headers, source, resolve. */
     public array $requests = [];
 
     /** @var array Result handed back in place of a real provider response. */
     public array $response = ['success' => true, 'data' => 'ok'];
 
     #[\Override]
-    protected function http_post(string $url, string $payload, array $headers, string $source): array {
+    protected function http_post(string $url, string $payload, array $headers, string $source, array $resolve = []): array {
         $this->requests[] = [
             'url' => $url,
             'payload' => json_decode($payload, true),
             'headers' => $headers,
             'source' => $source,
+            'resolve' => $resolve,
         ];
 
         return $this->response + ['provider' => $source];
     }
 
     #[\Override]
-    protected function is_safe_url(string $url): bool {
-        return true;
+    protected function safe_addresses(string $url): array {
+        return ['8.8.8.8'];
     }
 }

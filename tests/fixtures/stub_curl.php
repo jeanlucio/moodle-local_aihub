@@ -41,6 +41,9 @@ class stub_curl extends \curl {
     /** @var int HTTP status reported by get_info(). */
     public int $code = 200;
 
+    /** @var array Options the last post() was given. */
+    public array $postoptions = [];
+
     /**
      * Marks the next call as a transport failure.
      *
@@ -58,6 +61,7 @@ class stub_curl extends \curl {
 
     #[\Override]
     public function post($url, $params = '', $options = []) {
+        $this->postoptions = $options;
         return $this->body;
     }
 

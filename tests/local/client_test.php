@@ -114,15 +114,170 @@ final class client_test extends \advanced_testcase {
     }
 
     /**
-     * A hostname with no resolvable DNS records is allowed through (nothing to block).
+     * A hostname with no DNS records is refused: there is no address to check, and cURL would
+     * resolve it again on its own when it connects.
      *
      * @return void
      */
-    public function test_is_safe_url_allows_when_dns_resolves_to_nothing(): void {
+    public function test_is_safe_url_refuses_when_dns_resolves_to_nothing(): void {
         $client = new dns_stub_client();
         $client->dnsresult = [];
 
-        $this->assertTrue($this->call_protected($client, 'is_safe_url', ['https://unresolvable.example.com/v1']));
+        $this->assertFalse($this->call_protected($client, 'is_safe_url', ['https://unresolvable.example.com/v1']));
+    }
+
+    /**
+     * Addresses the plain private/reserved filter lets through are refused too: IPv6 forms
+     * carrying an internal IPv4 address, IPv6 literals in brackets, the shared address space
+     * some clouds serve instance metadata from, and a fully qualified localhost.
+     *
+     * Only literal IPs and the loopback host are used so no DNS lookup is needed.
+     *
+     * @return void
+     */
+    public function test_is_safe_url_refuses_special_purpose_addresses(): void {
+        $client = new client();
+        $hosts = [
+            '[::1]', '[::ffff:127.0.0.1]', '[::ffff:10.0.0.1]', '[::7f00:1]', '[64:ff9b::a00:1]',
+            '[fd00::1]', '[fe80::1]', '100.64.0.1', '100.100.100.200', '192.0.0.1', '198.18.0.1',
+            'localhost.', 'LOCALHOST',
+        ];
+
+        foreach ($hosts as $host) {
+            $url = 'https://' . $host . '/v1';
+            $this->assertFalse($this->call_protected($client, 'is_safe_url', [$url]), $url . ' should be refused');
+        }
+    }
+
+    /**
+     * A public address is still accepted when written as IPv6, plainly or through NAT64.
+     *
+     * @return void
+     */
+    public function test_is_safe_url_accepts_public_ipv6(): void {
+        $client = new client();
+
+        $this->assertTrue($this->call_protected($client, 'is_safe_url', ['https://[2001:4860:4860::8888]/v1']));
+        $this->assertTrue($this->call_protected($client, 'is_safe_url', ['https://[64:ff9b::808:808]/v1']));
+    }
+
+    /**
+     * One internal address among the resolved ones is enough to refuse the host, including
+     * one hidden in an IPv4-mapped IPv6 record or in the shared address space.
+     *
+     * @return void
+     */
+    public function test_is_safe_url_refuses_any_internal_resolved_address(): void {
+        $client = new dns_stub_client();
+
+        foreach ([['8.8.8.8', '::ffff:127.0.0.1'], ['100.100.100.200'], ['8.8.8.8', 'fd00::1']] as $resolved) {
+            $client->dnsresult = $resolved;
+            $this->assertFalse(
+                $this->call_protected($client, 'is_safe_url', ['https://api.example.com/v1']),
+                implode(',', $resolved) . ' should be refused'
+            );
+        }
+    }
+
+    /**
+     * An address the site blocks in its own HTTP security settings is refused, because the
+     * request is pinned to the validated address instead of core's own lookup.
+     *
+     * @return void
+     */
+    public function test_is_safe_url_honours_the_site_blocklist(): void {
+        $this->resetAfterTest();
+        set_config('curlsecurityblockedhosts', '8.8.4.4');
+
+        $client = new dns_stub_client();
+        $client->dnsresult = ['8.8.8.8', '8.8.4.4'];
+
+        $this->assertFalse($this->call_protected($client, 'is_safe_url', ['https://api.example.com/v1']));
+        $this->assertNotSame('', $client->endpoint_problem('https://8.8.4.4/v1'));
+        $this->assertSame('', $client->endpoint_problem('https://8.8.8.8/v1'));
+    }
+
+    /**
+     * The validated addresses become the CURLOPT_RESOLVE entry, with IPv6 in brackets and
+     * the URL's own port; an IP literal has no name to pin.
+     *
+     * @return void
+     */
+    public function test_pin_to(): void {
+        $client = new client();
+
+        $this->assertSame(
+            ['api.example.com:443:8.8.8.8,[2001:4860:4860::8888]'],
+            $this->call_protected($client, 'pin_to', [
+                'https://api.example.com/v1/chat/completions',
+                ['8.8.8.8', '2001:4860:4860::8888'],
+            ])
+        );
+        $this->assertSame(
+            ['api.example.com:8443:8.8.8.8'],
+            $this->call_protected($client, 'pin_to', ['https://api.example.com:8443/v1', ['8.8.8.8']])
+        );
+        $this->assertSame([], $this->call_protected($client, 'pin_to', ['https://8.8.8.8/v1', ['8.8.8.8']]));
+        $this->assertSame([], $this->call_protected($client, 'pin_to', ['https://[2001:4860:4860::8888]/v1', ['x']]));
+    }
+
+    /**
+     * The OpenAI-compatible request is pinned to the addresses the endpoint was validated
+     * against, so a DNS answer that changes before the connection cannot redirect it.
+     *
+     * @return void
+     */
+    public function test_the_openai_request_is_pinned_to_the_validated_addresses(): void {
+        $this->resetAfterTest();
+        set_config('openai_key', 'site-openai', 'local_aihub');
+        set_config('openai_baseurl', 'https://api.example.com/v1', 'local_aihub');
+
+        $client = new class extends dns_stub_client {
+            /** @var array[] CURLOPT_RESOLVE entries each request was given. */
+            public array $resolves = [];
+
+            #[\Override]
+            protected function http_post(
+                string $url,
+                string $payload,
+                array $headers,
+                string $source,
+                array $resolve = []
+            ): array {
+                $this->resolves[] = $resolve;
+
+                return ['success' => true, 'data' => 'ok', 'provider' => $source];
+            }
+        };
+        $client->dnsresult = ['8.8.8.8'];
+
+        $result = $client->generate_text('', 'hello', false, 0);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame([['api.example.com:443:8.8.8.8']], $client->resolves);
+    }
+
+    /**
+     * Every request refuses redirects and verifies the certificate chain, which Moodle's curl
+     * leaves off by default; the pinning entry is passed on only when there is one.
+     *
+     * @return void
+     */
+    public function test_requests_refuse_redirects_and_verify_the_certificate(): void {
+        $client = new stub_transport_client();
+        $client->curl->body = json_encode(['choices' => [['message' => ['content' => 'hi']]]]);
+
+        $client->post_for_testing('https://x', '{}', [], 'Groq');
+        $options = $client->curl->postoptions;
+
+        $this->assertSame(0, $options['CURLOPT_FOLLOWLOCATION']);
+        $this->assertSame(1, $options['CURLOPT_SSL_VERIFYPEER']);
+        $this->assertSame(2, $options['CURLOPT_SSL_VERIFYHOST']);
+        $this->assertArrayNotHasKey('CURLOPT_RESOLVE', $options);
+
+        $client->post_for_testing('https://api.example.com/v1', '{}', [], 'OpenAI', ['api.example.com:443:8.8.8.8']);
+
+        $this->assertSame(['api.example.com:443:8.8.8.8'], $client->curl->postoptions['CURLOPT_RESOLVE']);
     }
 
     /**
@@ -591,13 +746,19 @@ final class client_test extends \advanced_testcase {
             public array $asked = [];
 
             #[\Override]
-            protected function http_post(string $url, string $payload, array $headers, string $source): array {
+            protected function http_post(
+                string $url,
+                string $payload,
+                array $headers,
+                string $source,
+                array $resolve = []
+            ): array {
                 $this->asked[] = $source;
                 $this->curl->body = $source === 'Gemini'
                     ? json_encode(['promptFeedback' => ['blockReason' => 'SAFETY']])
                     : json_encode(['choices' => [['message' => ['content' => 'from groq']]]]);
 
-                return parent::http_post($url, $payload, $headers, $source);
+                return parent::http_post($url, $payload, $headers, $source, $resolve);
             }
         };
 

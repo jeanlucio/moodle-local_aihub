@@ -40,6 +40,23 @@ class client {
     const HTTP_TIMEOUT = 30;
 
     /**
+     * @var string IPv4 special-purpose ranges that PHP's private and reserved filter flags let
+     *             through: shared address space (where some clouds serve instance metadata),
+     *             IETF protocol assignments and benchmarking.
+     */
+    const SPECIAL_IPV4_RANGES = '100.64.0.0/10,192.0.0.0/24,198.18.0.0/15';
+
+    /**
+     * @var string[] 96-bit IPv6 prefixes whose last 32 bits are an IPv4 address that a
+     *               connection may end up reaching: IPv4-mapped, IPv4-compatible and NAT64.
+     */
+    const IPV4_EMBEDDING_PREFIXES = [
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff",
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+        "\x00\x64\xff\x9b\x00\x00\x00\x00\x00\x00\x00\x00",
+    ];
+
+    /**
      * Resolves a provider and generates text, tier-first (personal then site).
      *
      * @param string $system System instruction (may be empty).
@@ -153,8 +170,17 @@ class client {
                 $model = keys::get_openai_model();
             }
             $openaiurl = $this->resolve_openai_url($rawurl);
-            if ($this->is_safe_url($openaiurl)) {
-                $result = $this->call_openai_compatible($system, $user, $openaikey, $openaiurl, $model, $jsonmode);
+            $addresses = $this->safe_addresses($openaiurl);
+            if ($addresses !== []) {
+                $result = $this->call_openai_compatible(
+                    $system,
+                    $user,
+                    $openaikey,
+                    $openaiurl,
+                    $model,
+                    $jsonmode,
+                    $this->pin_to($openaiurl, $addresses)
+                );
             } else {
                 // A refused endpoint is a failure like any other: without a trace the usage
                 // report would show nothing wrong while the configured provider is never used.
@@ -280,6 +306,8 @@ class client {
      * @param string $endpointurl Full URL to the chat completions endpoint.
      * @param string $model Model identifier (e.g. gpt-4o-mini).
      * @param bool $jsonmode Whether to force JSON output.
+     * @param string[] $resolve CURLOPT_RESOLVE entries pinning the endpoint's host to the
+     *                          addresses it was validated against.
      * @return array HTTP result array.
      */
     protected function call_openai_compatible(
@@ -288,7 +316,8 @@ class client {
         string $key,
         string $endpointurl,
         string $model,
-        bool $jsonmode
+        bool $jsonmode,
+        array $resolve = []
     ): array {
         $modelname = $model !== '' ? $model : 'gpt-4o-mini';
         $data = [
@@ -302,7 +331,8 @@ class client {
             $endpointurl,
             json_encode($data),
             ['Authorization: Bearer ' . $key, 'Content-Type: application/json'],
-            'OpenAI'
+            'OpenAI',
+            $resolve
         ) + ['model' => $modelname];
     }
 
@@ -367,51 +397,121 @@ class client {
     /**
      * Returns true when the URL is safe to use as an AI endpoint.
      *
-     * Enforces HTTPS and blocks loopback, link-local, and RFC-1918 private
-     * addresses to prevent SSRF via a configurable endpoint. Resolves A/AAAA DNS
-     * records to block rebinding attacks where a public domain points to an
-     * internal IP.
-     *
      * @param string $url The URL to validate.
      * @return bool True if safe; false otherwise.
      */
     protected function is_safe_url(string $url): bool {
+        return $this->safe_addresses($url) !== [];
+    }
+
+    /**
+     * Lists the addresses an AI endpoint may be reached at, or none when it must be refused.
+     *
+     * Enforces HTTPS and refuses loopback, link-local, private and other special-purpose
+     * addresses, whether the host is written as an IP or resolves to one. A host that resolves
+     * to nothing is refused: there is no address left to check, and cURL would resolve it again
+     * on its own. Addresses the site's HTTP security settings block are refused too, since the
+     * request is pinned to the addresses returned here (see {@see self::pin_to()}) and core's
+     * own lookup is then no longer the one that decides where it connects.
+     *
+     * @param string $url The URL to validate.
+     * @return string[] The validated IP addresses; empty when the URL is refused.
+     */
+    protected function safe_addresses(string $url): array {
         $parsed = parse_url($url);
         if (!$parsed || ($parsed['scheme'] ?? '') !== 'https') {
+            return [];
+        }
+
+        // Brackets wrap an IPv6 literal, and a trailing dot names the same host fully qualified.
+        $host = rtrim(trim(strtolower($parsed['host'] ?? ''), '[]'), '.');
+        if ($host === '' || $host === 'localhost') {
+            return [];
+        }
+
+        $addresses = filter_var($host, FILTER_VALIDATE_IP) !== false ? [$host] : $this->resolve_dns($host);
+        if ($addresses === []) {
+            return [];
+        }
+
+        $port = (int) ($parsed['port'] ?? 443);
+        $helper = new \core\files\curl_security_helper();
+        foreach ($addresses as $address) {
+            if (!$this->is_public_ip($address) || $helper->url_is_blocked($this->address_url($address, $port))) {
+                return [];
+            }
+        }
+
+        return $addresses;
+    }
+
+    /**
+     * Says whether an IP address is a public one an endpoint may be reached at.
+     *
+     * An IPv6 address that carries an IPv4 one is judged by that IPv4 address: PHP's filter
+     * flags pass ::ffff:127.0.0.1, while the connection would reach the loopback interface.
+     *
+     * @param string $ip IPv4 or IPv6 address.
+     * @return bool
+     */
+    protected function is_public_ip(string $ip): bool {
+        if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
             return false;
         }
+
+        $packed = inet_pton($ip);
+        if (strlen($packed) === 16 && in_array(substr($packed, 0, 12), self::IPV4_EMBEDDING_PREFIXES, true)) {
+            $ip = inet_ntop(substr($packed, 12));
+        }
+
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return false;
+        }
+
+        return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === false
+            || !address_in_subnet($ip, self::SPECIAL_IPV4_RANGES);
+    }
+
+    /**
+     * Builds a URL addressing one IP directly, for the core HTTP security check.
+     *
+     * @param string $ip IPv4 or IPv6 address.
+     * @param int $port Port the request will use.
+     * @return string
+     */
+    protected function address_url(string $ip, int $port): string {
+        $host = str_contains($ip, ':') ? '[' . $ip . ']' : $ip;
+
+        return 'https://' . $host . ':' . $port . '/';
+    }
+
+    /**
+     * Builds the CURLOPT_RESOLVE entry that makes cURL connect to the validated addresses.
+     *
+     * Without it cURL resolves the host again when it connects, and a DNS answer that changed
+     * since the check (DNS rebinding) would send the request to an address nobody validated.
+     *
+     * @param string $url The endpoint URL.
+     * @param string[] $addresses The addresses {@see self::safe_addresses()} validated.
+     * @return string[] One "host:port:addresses" entry, or none when the host is an IP literal.
+     */
+    protected function pin_to(string $url, array $addresses): array {
+        $parsed = parse_url($url);
         $host = $parsed['host'] ?? '';
-        if (empty($host)) {
-            return false;
+        if ($host === '' || filter_var(trim($host, '[]'), FILTER_VALIDATE_IP) !== false) {
+            return [];
         }
-        if (in_array(strtolower($host), ['localhost', '127.0.0.1', '::1'], true)) {
-            return false;
-        }
-        $ip = filter_var($host, FILTER_VALIDATE_IP);
-        if ($ip !== false) {
-            $ispublic = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
-            if ($ispublic === false) {
-                return false;
-            }
-        } else {
-            foreach ($this->resolve_dns($host) as $resolvedip) {
-                $ispublic = filter_var(
-                    $resolvedip,
-                    FILTER_VALIDATE_IP,
-                    FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
-                );
-                if ($ispublic === false) {
-                    return false;
-                }
-            }
-        }
-        return true;
+
+        $port = (int) ($parsed['port'] ?? 443);
+        $targets = array_map(fn(string $ip): string => str_contains($ip, ':') ? '[' . $ip . ']' : $ip, $addresses);
+
+        return [$host . ':' . $port . ':' . implode(',', $targets)];
     }
 
     /**
      * Resolves a hostname's A and AAAA records to a flat list of IP strings.
      *
-     * Isolated from {@see self::is_safe_url()} so tests can stub DNS resolution
+     * Isolated from {@see self::safe_addresses()} so tests can stub DNS resolution
      * without depending on real network lookups.
      *
      * @param string $host The hostname to resolve.
@@ -461,12 +561,26 @@ class client {
      * @param string $payload JSON-encoded POST body.
      * @param array $headers Array of header strings.
      * @param string $source Display name of the AI provider (for error messages).
+     * @param string[] $resolve CURLOPT_RESOLVE entries pinning the host to validated addresses.
      * @return array Keys: success (bool), data (string) on success, provider (string), message (string) on failure.
      */
-    protected function http_post(string $url, string $payload, array $headers, string $source): array {
+    protected function http_post(string $url, string $payload, array $headers, string $source, array $resolve = []): array {
         $curl = $this->make_curl();
         $curl->setHeader($headers);
-        $response = $curl->post($url, $payload, ['timeout' => self::HTTP_TIMEOUT]);
+        $options = [
+            'timeout' => self::HTTP_TIMEOUT,
+            // Provider APIs answer where they are asked. Following a redirect would hand the
+            // request, prompt included, to a host that was never validated.
+            'CURLOPT_FOLLOWLOCATION' => 0,
+            // Moodle's curl ships with peer verification off, and every request carries an API key.
+            'CURLOPT_SSL_VERIFYPEER' => 1,
+            'CURLOPT_SSL_VERIFYHOST' => 2,
+        ];
+        if ($resolve !== []) {
+            // Overrides core's own pinning, which comes from a separate lookup of the same host.
+            $options['CURLOPT_RESOLVE'] = $resolve;
+        }
+        $response = $curl->post($url, $payload, $options);
         $info = $curl->get_info();
         $code = isset($info['http_code']) ? (int) $info['http_code'] : 0;
 

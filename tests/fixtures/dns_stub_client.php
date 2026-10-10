@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Test double for exercising is_safe_url's DNS-rebinding branch without real DNS lookups.
+ * Test double for exercising the endpoint check's DNS branch without real DNS lookups.
  *
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
@@ -27,7 +27,7 @@ namespace local_aihub\local;
 /**
  * A client whose DNS resolution is programmable, while is_safe_url runs for real.
  *
- * Unlike {@see mock_client}, this double does not stub is_safe_url() itself, so
+ * Unlike {@see mock_client}, this double does not stub safe_addresses() itself, so
  * its real logic (HTTPS check, loopback/private-range blocking, and the public-ip
  * check on resolved addresses) is exercised end to end.
  *

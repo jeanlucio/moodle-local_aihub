@@ -67,14 +67,15 @@ class mock_client extends client {
         string $key,
         string $endpointurl,
         string $model,
-        bool $jsonmode
+        bool $jsonmode,
+        array $resolve = []
     ): array {
         $this->calls[] = 'OpenAI';
         return $this->results['OpenAI'] ?? ['success' => false, 'message' => 'OpenAI: stub', 'provider' => 'OpenAI'];
     }
 
     #[\Override]
-    protected function is_safe_url(string $url): bool {
-        return true;
+    protected function safe_addresses(string $url): array {
+        return ['8.8.8.8'];
     }
 }

@@ -53,10 +53,11 @@ class stub_transport_client extends client {
      * @param string $payload JSON-encoded POST body.
      * @param array $headers Array of header strings.
      * @param string $source Display name of the AI provider.
+     * @param string[] $resolve CURLOPT_RESOLVE entries to pass on.
      * @return array
      */
-    public function post_for_testing(string $url, string $payload, array $headers, string $source): array {
-        return $this->http_post($url, $payload, $headers, $source);
+    public function post_for_testing(string $url, string $payload, array $headers, string $source, array $resolve = []): array {
+        return $this->http_post($url, $payload, $headers, $source, $resolve);
     }
 
     #[\Override]
