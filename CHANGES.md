@@ -4,6 +4,24 @@ All notable changes to this plugin are documented here.
 
 ---
 
+## [v1.4.0] — 2026-10-20
+
+### Added
+- A provider that times out, is overloaded or refuses the key is remembered for a few minutes and
+  tried last, so the requests that follow no longer wait for it again. It is never removed from
+  the list: if every provider is in this state, all of them are still tried. Changing the keys,
+  endpoint or model forgets the failure. The window is set in the plugin settings (default 5
+  minutes, 0 turns it off).
+- The order the providers are tried in can be chosen by dragging, with the mouse or from the
+  keyboard. The administrator sets the site's order on a page of its own, linked from the plugin
+  settings, and each user sets theirs on the My AI keys page. Personal keys are still tried before
+  the site's, and an order that was never saved stays the built-in one (Gemini, Groq, DeepSeek,
+  OpenAI-compatible).
+- The order a user chose is declared in the privacy provider and included in the export of their
+  data.
+
+---
+
 ## [v1.3.4] — 2026-10-10
 
 ### Security
