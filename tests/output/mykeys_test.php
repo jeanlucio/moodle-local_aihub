@@ -167,4 +167,82 @@ final class mykeys_test extends \advanced_testcase {
         $this->assertSame('', $byaction['legacy'], 'rows from before the origin was recorded say nothing');
         $this->assertSame(get_string('mykeys_log_keysource', 'local_aihub'), $context['logkeysourcelabel']);
     }
+
+    /**
+     * The page carries the provider order: the list shows the effective order, the hidden field
+     * carries only what the user saved (nothing for "automatic"), and the button back to automatic is
+     * offered only when the user has an order of their own.
+     *
+     * @return void
+     */
+    public function test_provider_order_context(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+        $output = $PAGE->get_renderer('core');
+
+        keys::save_site_provider_order([keys::PROVIDER_OPENAI]);
+        $context = (new mykeys((int) $user->id))->export_for_template($output);
+
+        $this->assertSame(
+            [keys::PROVIDER_OPENAI, keys::PROVIDER_GEMINI, keys::PROVIDER_GROQ, keys::PROVIDER_DEEPSEEK],
+            array_column($context['providerorder']['items'], 'name'),
+            'the list shows the order that is in effect'
+        );
+        $this->assertSame('', $context['providerorder']['inputvalue'], 'automatic sends nothing');
+        $this->assertFalse($context['orderhasown']);
+        $this->assertSame(get_string('mykeys_providerorder_isauto', 'local_aihub'), $context['orderstatus']);
+
+        keys::save_user_provider_order([keys::PROVIDER_DEEPSEEK, keys::PROVIDER_GROQ], (int) $user->id);
+        $context = (new mykeys((int) $user->id))->export_for_template($output);
+
+        $this->assertSame(
+            [keys::PROVIDER_DEEPSEEK, keys::PROVIDER_GROQ, keys::PROVIDER_OPENAI, keys::PROVIDER_GEMINI],
+            array_column($context['providerorder']['items'], 'name')
+        );
+        $this->assertSame('deepseek,groq', $context['providerorder']['inputvalue']);
+        $this->assertTrue($context['orderhasown']);
+        $this->assertSame(get_string('mykeys_providerorder_isown', 'local_aihub'), $context['orderstatus']);
+    }
+
+    /**
+     * The rendered page has the draggable list, named by its heading, and the hidden field.
+     *
+     * @return void
+     */
+    public function test_provider_order_list_is_rendered(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+        keys::save_user_provider_order([keys::PROVIDER_GROQ], (int) $user->id);
+
+        $html = $PAGE->get_renderer('local_aihub')->render(new mykeys((int) $user->id));
+
+        $this->assertStringContainsString('id="aihub-providerorder-list"', $html);
+        $this->assertStringContainsString('aria-labelledby="aihub-providerorder-label"', $html);
+        $this->assertStringContainsString('id="aihub-providerorder-label"', $html);
+        $this->assertStringContainsString('name="providerorder" value="groq"', $html);
+        $this->assertStringContainsString('name="resetorder"', $html);
+        $this->assertSame(4, substr_count($html, 'data-drag-type="move"'), 'one drag handle per provider');
+        $this->assertLessThan(strpos($html, 'data-provider="gemini"'), strpos($html, 'data-provider="groq"'));
+    }
+
+    /**
+     * A user who never chose an order is not offered the way back to it.
+     *
+     * @return void
+     */
+    public function test_no_reset_button_without_an_order_of_their_own(): void {
+        global $PAGE;
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
+
+        $html = $PAGE->get_renderer('local_aihub')->render(new mykeys((int) $user->id));
+
+        $this->assertStringNotContainsString('name="resetorder"', $html);
+        $this->assertStringContainsString('name="providerorder" value=""', $html);
+    }
 }

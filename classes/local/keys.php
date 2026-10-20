@@ -52,15 +52,112 @@ class keys {
     const PROVIDER_OPENAI = 'openai';
 
     /**
-     * Returns the hardcoded provider order used during resolution.
+     * Returns every provider, in the built-in order.
      *
-     * Free/fast tiers first (Gemini, Groq), paid last (OpenAI). The order only
-     * matters when more than one key is set within the same tier.
+     * Free/fast tiers first (Gemini, Groq), paid last (OpenAI). This is the canonical list and the
+     * default order; the order actually used for a request is provider_order(), which puts the
+     * user's choice and the site default ahead of it.
      *
      * @return string[]
      */
     public static function providers(): array {
         return [self::PROVIDER_GEMINI, self::PROVIDER_GROQ, self::PROVIDER_DEEPSEEK, self::PROVIDER_OPENAI];
+    }
+
+    /**
+     * Returns the order in which providers are tried for a user, within one group of keys.
+     *
+     * The user's own order goes first, then the site's, then whatever is still missing in the
+     * built-in order, so every provider appears exactly once and a provider left out of a list is
+     * only tried later, never lost. The order never decides which group of keys is tried first:
+     * personal keys still come before the site's, and that is resolved by the caller, not here.
+     *
+     * @param int|null $userid User whose order counts. Defaults to $USER->id; 0 means no user
+     *                         (cron), where only the site's order applies.
+     * @return string[] Every provider exactly once.
+     */
+    public static function provider_order(?int $userid = null): array {
+        global $USER;
+
+        $userid = $userid ?? (int) $USER->id;
+        $wanted = $userid > 0 ? self::get_user_provider_order($userid) : [];
+
+        return self::normalize_order(array_merge($wanted, self::get_site_provider_order(), self::providers()));
+    }
+
+    /**
+     * Reduces a list of providers to the known ones, once each, in the order given.
+     *
+     * Anything that is not a provider is dropped, so a stale value or a tampered form field cannot
+     * put a made-up provider in the list.
+     *
+     * @param string|string[] $value A list of providers, or the comma separated text it is stored as.
+     * @return string[]
+     */
+    public static function normalize_order(string|array $value): array {
+        $items = is_array($value) ? $value : explode(',', $value);
+
+        $order = [];
+        foreach ($items as $item) {
+            $item = trim((string) $item);
+            if (in_array($item, self::providers(), true) && !in_array($item, $order, true)) {
+                $order[] = $item;
+            }
+        }
+        return $order;
+    }
+
+    /**
+     * Returns the order the user chose, or an empty list for "automatic" (the site's order).
+     *
+     * @param int|null $userid Defaults to $USER->id.
+     * @return string[]
+     */
+    public static function get_user_provider_order(?int $userid = null): array {
+        global $USER;
+
+        $userid = $userid ?? (int) $USER->id;
+
+        return self::normalize_order((string) get_user_preferences('local_aihub_providerorder', '', $userid));
+    }
+
+    /**
+     * Saves the order the user chose. An empty list, or one with no provider in it, clears the choice.
+     *
+     * @param string|string[] $order The providers, in the order wanted.
+     * @param int|null $userid Defaults to $USER->id.
+     * @return void
+     */
+    public static function save_user_provider_order(string|array $order, ?int $userid = null): void {
+        global $USER;
+
+        $userid = $userid ?? (int) $USER->id;
+        $list = self::normalize_order($order);
+        if ($list === []) {
+            unset_user_preference('local_aihub_providerorder', $userid);
+        } else {
+            set_user_preference('local_aihub_providerorder', implode(',', $list), $userid);
+        }
+    }
+
+    /**
+     * Returns the order the administrator chose for the site, or an empty list for "automatic".
+     *
+     * @return string[]
+     */
+    public static function get_site_provider_order(): array {
+        return self::normalize_order((string) get_config('local_aihub', 'providerorder'));
+    }
+
+    /**
+     * Saves the site's order. An empty list, or one with no provider in it, goes back to automatic.
+     *
+     * @param string|string[] $order The providers, in the order wanted.
+     * @return void
+     */
+    public static function save_site_provider_order(string|array $order): void {
+        $list = self::normalize_order($order);
+        set_config('providerorder', implode(',', $list), 'local_aihub');
     }
 
     /**

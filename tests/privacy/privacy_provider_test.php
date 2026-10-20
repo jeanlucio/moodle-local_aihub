@@ -279,4 +279,30 @@ final class privacy_provider_test extends \advanced_testcase {
 
         $this->assertEqualsCanonicalizing($declared, array_keys($data->logs[0]));
     }
+
+    /**
+     * The order the user chose is declared as a preference and exported with its value:
+     * unlike a key it is not a secret, and the user is entitled to see what was stored.
+     *
+     * @return void
+     */
+    public function test_the_provider_order_is_declared_and_exported_with_its_value(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        keys::save_user_provider_order([keys::PROVIDER_GROQ, keys::PROVIDER_GEMINI], (int) $user->id);
+
+        $collection = provider::get_metadata(new collection('local_aihub'));
+        $declared = [];
+        foreach ($collection->get_collection() as $item) {
+            if ($item instanceof \core_privacy\local\metadata\types\user_preference) {
+                $declared[] = $item->get_name();
+            }
+        }
+        $this->assertContains('local_aihub_providerorder', $declared);
+
+        provider::export_user_preferences((int) $user->id);
+        $prefs = writer::with_context(context_user::instance($user->id))->get_user_preferences('local_aihub');
+
+        $this->assertSame('groq,gemini', $prefs->local_aihub_providerorder->value);
+    }
 }

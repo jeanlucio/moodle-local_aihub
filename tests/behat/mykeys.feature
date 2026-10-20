@@ -20,6 +20,36 @@ Feature: Manage personal AI keys
     And I should see "Configured"
     And the field "key_gemini" matches value ""
 
+  Scenario: The provider order starts as the site's
+    Then I should see "Provider order"
+    And I should see "You are using the site's order."
+    And I should not see "Back to automatic"
+
+  Scenario: Saving the form without touching the order keeps it automatic
+    When I set the field "key_gemini" to "secret-gemini-key"
+    And I press "Save"
+    Then I should see "You are using the site's order."
+    And I should not see "Back to automatic"
+
+  @javascript
+  Scenario: Moving a provider from the keyboard dialogue saves my own order
+    When I click on "[data-provider='groq'] [data-drag-type='move']" "css_element"
+    And I click on "To the top of the list" "link"
+    And I press "Save"
+    Then I should see "Your AI key settings were saved."
+    And I should see "You chose this order."
+    And "Groq" "text" should appear before "Gemini" "text" in the ".local-aihub-providerorder" "css_element"
+
+  @javascript
+  Scenario: Going back to automatic gives the site's order again
+    When I click on "[data-provider='groq'] [data-drag-type='move']" "css_element"
+    And I click on "To the top of the list" "link"
+    And I press "Save"
+    And I press "Back to automatic"
+    Then I should see "You are using the site's order."
+    And I should not see "Back to automatic"
+    And "Gemini" "text" should appear before "Groq" "text" in the ".local-aihub-providerorder" "css_element"
+
   Scenario: My own history shows why an attempt of mine failed
     Given the following AI usage entries exist:
       | user  | component      | description | provider | keysource | success | errormessage            |

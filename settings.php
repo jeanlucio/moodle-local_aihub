@@ -47,53 +47,97 @@ if ($hassiteconfig) {
         1
     ));
 
+    // A change to the site's keys, endpoint or model may be what a failing provider needed, so the
+    // memory of the site's failures starts over.
+    $clearhealth = 'local_aihub\local\health::clear_site';
+
     $settings->add(new admin_setting_heading(
         'local_aihub/sitekeys',
         get_string('settings_sitekeys_heading', 'local_aihub'),
         get_string('settings_sitekeys_desc', 'local_aihub')
     ));
 
-    $settings->add(new admin_setting_configpasswordunmask(
+    $setting = new admin_setting_configpasswordunmask(
         'local_aihub/gemini_key',
         get_string('settings_gemini_key', 'local_aihub'),
         get_string('settings_gemini_key_desc', 'local_aihub'),
         ''
-    ));
+    );
+    $setting->set_updatedcallback($clearhealth);
+    $settings->add($setting);
 
-    $settings->add(new admin_setting_configpasswordunmask(
+    $setting = new admin_setting_configpasswordunmask(
         'local_aihub/groq_key',
         get_string('settings_groq_key', 'local_aihub'),
         get_string('settings_groq_key_desc', 'local_aihub'),
         ''
-    ));
+    );
+    $setting->set_updatedcallback($clearhealth);
+    $settings->add($setting);
 
-    $settings->add(new admin_setting_configpasswordunmask(
+    $setting = new admin_setting_configpasswordunmask(
         'local_aihub/deepseek_key',
         get_string('settings_deepseek_key', 'local_aihub'),
         get_string('settings_deepseek_key_desc', 'local_aihub'),
         ''
-    ));
+    );
+    $setting->set_updatedcallback($clearhealth);
+    $settings->add($setting);
 
-    $settings->add(new admin_setting_configpasswordunmask(
+    $setting = new admin_setting_configpasswordunmask(
         'local_aihub/openai_key',
         get_string('settings_openai_key', 'local_aihub'),
         get_string('settings_openai_key_desc', 'local_aihub'),
         ''
-    ));
+    );
+    $setting->set_updatedcallback($clearhealth);
+    $settings->add($setting);
 
-    $settings->add(new \local_aihub\admin\setting_endpoint(
+    $setting = new \local_aihub\admin\setting_endpoint(
         'local_aihub/openai_baseurl',
         get_string('settings_openai_baseurl', 'local_aihub'),
         get_string('settings_openai_baseurl_desc', 'local_aihub'),
         'https://api.openai.com/v1'
-    ));
+    );
+    $setting->set_updatedcallback($clearhealth);
+    $settings->add($setting);
 
-    $settings->add(new admin_setting_configtext(
+    $setting = new admin_setting_configtext(
         'local_aihub/openai_model',
         get_string('settings_openai_model', 'local_aihub'),
         get_string('settings_openai_model_desc', 'local_aihub'),
         'gpt-4o-mini',
         PARAM_TEXT
+    );
+    $setting->set_updatedcallback($clearhealth);
+    $settings->add($setting);
+
+    // The order has a page of its own, like the question bank's column order: a list that is dragged does not
+    // belong in a form of settings, and the settings tree is also built on install and upgrade, where nothing
+    // is rendered.
+    $providerorderurl = new moodle_url('/local/aihub/providerorder.php');
+    $ADMIN->add('local_aihub_category', new admin_externalpage(
+        'local_aihub_providerorder',
+        get_string('providerorder_title', 'local_aihub'),
+        $providerorderurl,
+        'moodle/site:config'
+    ));
+    $settings->add(new admin_setting_description(
+        'local_aihub/providerorderlink',
+        '',
+        new lang_string(
+            'settings_providerorder_link',
+            'local_aihub',
+            html_writer::link($providerorderurl, get_string('providerorder_title', 'local_aihub'))
+        )
+    ));
+
+    $settings->add(new admin_setting_configtext(
+        'local_aihub/failurememory',
+        get_string('settings_failurememory', 'local_aihub'),
+        get_string('settings_failurememory_desc', 'local_aihub'),
+        5,
+        PARAM_INT
     ));
 
     $settings->add(new admin_setting_configtext(

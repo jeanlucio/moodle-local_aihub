@@ -76,6 +76,10 @@ class provider implements
         $collection->add_user_preference('local_aihub_openai_key', 'privacy:metadata:preference:openai_key');
         $collection->add_user_preference('local_aihub_openai_url', 'privacy:metadata:preference:openai_url');
         $collection->add_user_preference('local_aihub_openai_model', 'privacy:metadata:preference:openai_model');
+        $collection->add_user_preference(
+            'local_aihub_providerorder',
+            'privacy:metadata:preference:providerorder'
+        );
 
         $collection->add_external_location_link(
             'deepseek',
@@ -200,6 +204,7 @@ class provider implements
         $plain = [
             'local_aihub_openai_url'   => 'privacy:metadata:preference:openai_url',
             'local_aihub_openai_model' => 'privacy:metadata:preference:openai_model',
+            'local_aihub_providerorder' => 'privacy:metadata:preference:providerorder',
         ];
         foreach ($plain as $name => $description) {
             $value = get_user_preferences($name, null, $userid);

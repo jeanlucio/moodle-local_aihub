@@ -30,6 +30,12 @@
     * showhidelabel string Aria label for the show/hide toggle
     * advancedlabel string Summary label for the advanced section
     * providers array List of provider rows (name, label, isset, statuslabel, fieldkey, fieldremove, inputid)
+    * orderlabel string Heading of the provider order list
+    * orderhelp string Help text above the provider order list
+    * orderstatus string Whether the user is on the site's order or chose their own
+    * orderhasown boolean Whether the user has chosen an order of their own
+    * orderresetlabel string Label of the button that goes back to the site's order
+    * providerorder object Context of the local_aihub/provider_order list
     * openaiurl string Personal OpenAI-compatible base URL
     * openaiurllabel string Label for the base URL field
     * openaiurlplaceholder string Placeholder showing the site base URL
@@ -61,6 +67,16 @@
         "replacehint": "Leave blank to keep the current key.",
         "showhidelabel": "Show or hide the key while typing",
         "advancedlabel": "Advanced OpenAI-compatible settings",
+        "orderlabel": "Provider order",
+        "orderhelp": "Drag the providers to choose the order they are tried in.",
+        "orderstatus": "You are using the site's order.",
+        "orderhasown": false,
+        "orderresetlabel": "Back to automatic",
+        "providerorder": {
+            "listid": "aihub-providerorder-list", "inputid": "aihub-providerorder",
+            "inputname": "providerorder", "labelid": "aihub-providerorder-label", "inputvalue": "",
+            "items": [{"name": "gemini", "label": "Gemini", "movetitle": "Move Gemini", "nokey": false, "nokeylabel": ""}]
+        },
         "providers": [
             {"name": "gemini", "label": "Gemini", "isset": true, "statuslabel": "Configured",
              "fieldkey": "key_gemini", "fieldremove": "remove_gemini", "inputid": "aihub-key-gemini"},
@@ -126,6 +142,17 @@
         {{/providers}}
 
         <p class="text-muted small">{{replacehint}}</p>
+
+        <div class="mb-3">
+            <p class="fw-bold mb-1" id="aihub-providerorder-label">{{orderlabel}}</p>
+            <p class="form-text mt-0 mb-2">{{orderhelp}} {{orderstatus}}</p>
+            {{#providerorder}}
+                {{>local_aihub/provider_order}}
+            {{/providerorder}}
+            {{#orderhasown}}
+                <button type="submit" name="resetorder" value="1" class="btn btn-link px-0">{{orderresetlabel}}</button>
+            {{/orderhasown}}
+        </div>
 
         <details class="mb-3">
             <summary>{{advancedlabel}}</summary>

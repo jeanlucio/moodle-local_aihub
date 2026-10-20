@@ -28,8 +28,10 @@ namespace local_aihub\local;
  * Resolves a BYOK key and generates text against the matching provider.
  *
  * Tier order is personal keys (when allowed) then site keys; within a tier the
- * provider order is Gemini then Groq then DeepSeek then OpenAI-compatible. On a
- * provider failure the next available one is tried. core_ai is never consulted here.
+ * provider order is keys::provider_order() (the user's choice, the site default, then
+ * Gemini, Groq, DeepSeek and OpenAI-compatible), with the providers that failed
+ * recently moved to the end (see health). On a provider failure the next available
+ * one is tried. core_ai is never consulted here.
  *
  * @package    local_aihub
  * @copyright  2026 Jean Lúcio
@@ -95,7 +97,11 @@ class client {
     }
 
     /**
-     * Tries Gemini then Groq then DeepSeek then OpenAI for one key tier (personal or site).
+     * Tries the providers that have a key in one group of keys (personal or site), in order.
+     *
+     * The order is the user's choice, then the site default, then the built-in one, with the providers
+     * that failed recently moved to the end (see health). A provider that answers is forgiven; one that
+     * fails for a reason of its own is remembered, so the next request does not wait for it again.
      *
      * @param string $system System instruction (may be empty).
      * @param string $user User prompt text.
@@ -116,89 +122,120 @@ class client {
         array &$attempts
     ): ?array {
         $keysource = $personal ? 'personal' : 'site';
-        $key = function (string $provider) use ($personal, $userid): string {
-            return $personal
-                ? keys::get_personal_key($provider, $userid)
-                : keys::get_site_key($provider);
-        };
+        $tier = $personal ? health::TIER_PERSONAL : health::TIER_SITE;
 
-        $geminikey = $key(keys::PROVIDER_GEMINI);
-        if ($geminikey !== '') {
-            $result = $this->call_gemini($system, $user, $geminikey, $jsonmode);
+        foreach (health::demote(keys::provider_order($userid), $tier, $userid) as $provider) {
+            $key = $personal ? keys::get_personal_key($provider, $userid) : keys::get_site_key($provider);
+            if ($key === '') {
+                continue;
+            }
+
+            $result = $this->call_provider($provider, $system, $user, $key, $jsonmode, $personal, $userid);
             $attempts[] = $this->attempt($result, $keysource);
             if ($result['success']) {
+                health::clear($tier, $provider, $userid);
                 return $result + ['keysource' => $keysource];
             }
-            $lasterror = $result;
-        }
-
-        $groqkey = $key(keys::PROVIDER_GROQ);
-        if ($groqkey !== '') {
-            $result = $this->call_groq($system, $user, $groqkey, $jsonmode);
-            $attempts[] = $this->attempt($result, $keysource);
-            if ($result['success']) {
-                return $result + ['keysource' => $keysource];
-            }
-            $lasterror = $result;
-        }
-
-        $deepseekkey = $key(keys::PROVIDER_DEEPSEEK);
-        if ($deepseekkey !== '') {
-            $result = $this->call_deepseek($system, $user, $deepseekkey, $jsonmode);
-            $attempts[] = $this->attempt($result, $keysource);
-            if ($result['success']) {
-                return $result + ['keysource' => $keysource];
-            }
-            $lasterror = $result;
-        }
-
-        $openaikey = $key(keys::PROVIDER_OPENAI);
-        if ($openaikey !== '') {
-            // URL and model follow the same tier as the key: the personal tier
-            // prefers the user's own endpoint/model, falling back to the site value.
-            if ($personal) {
-                $rawurl = keys::get_personal_openai_url($userid);
-                if ($rawurl === '') {
-                    $rawurl = keys::get_openai_baseurl();
-                }
-                $model = keys::get_personal_openai_model($userid);
-                if ($model === '') {
-                    $model = keys::get_openai_model();
-                }
-            } else {
-                $rawurl = keys::get_openai_baseurl();
-                $model = keys::get_openai_model();
-            }
-            $openaiurl = $this->resolve_openai_url($rawurl);
-            $addresses = $this->safe_addresses($openaiurl);
-            if ($addresses !== []) {
-                $result = $this->call_openai_compatible(
-                    $system,
-                    $user,
-                    $openaikey,
-                    $openaiurl,
-                    $model,
-                    $jsonmode,
-                    $this->pin_to($openaiurl, $addresses)
-                );
-            } else {
-                // A refused endpoint is a failure like any other: without a trace the usage
-                // report would show nothing wrong while the configured provider is never used.
-                $result = [
-                    'success' => false,
-                    'provider' => 'OpenAI',
-                    'model' => $model,
-                    'message' => 'OpenAI: ' . get_string('endpointblocked', 'local_aihub'),
-                ];
-            }
-            $attempts[] = $this->attempt($result, $keysource);
-            if ($result['success']) {
-                return $result + ['keysource' => $keysource];
+            if (!empty($result['remember'])) {
+                health::mark_failed($tier, $provider, $userid);
             }
             $lasterror = $result;
         }
 
         return null;
+    }
+
+    /**
+     * Calls one provider.
+     *
+     * @param string $provider One of the keys::PROVIDER_* constants.
+     * @param string $system System instruction (may be empty).
+     * @param string $user User prompt text.
+     * @param string $key The provider's API key.
+     * @param bool $jsonmode Whether to request structured JSON output.
+     * @param bool $personal True when the key is a personal one, which also prefers the user's own endpoint.
+     * @param int $userid User whose personal endpoint and model are read for the OpenAI-compatible provider.
+     * @return array HTTP result array.
+     */
+    protected function call_provider(
+        string $provider,
+        string $system,
+        string $user,
+        string $key,
+        bool $jsonmode,
+        bool $personal,
+        int $userid
+    ): array {
+        switch ($provider) {
+            case keys::PROVIDER_GEMINI:
+                return $this->call_gemini($system, $user, $key, $jsonmode);
+            case keys::PROVIDER_GROQ:
+                return $this->call_groq($system, $user, $key, $jsonmode);
+            case keys::PROVIDER_DEEPSEEK:
+                return $this->call_deepseek($system, $user, $key, $jsonmode);
+            default:
+                return $this->call_openai_for_tier($system, $user, $key, $jsonmode, $personal, $userid);
+        }
+    }
+
+    /**
+     * Calls the OpenAI-compatible provider with the endpoint and model of the group of keys in use.
+     *
+     * URL and model follow the same group as the key: the personal group prefers the user's own endpoint
+     * and model, field by field, falling back to the site's value. An endpoint a request would refuse is
+     * reported as a failure like any other: without a trace the usage report would show nothing wrong
+     * while the configured provider is never used.
+     *
+     * @param string $system System instruction (may be empty).
+     * @param string $user User prompt text.
+     * @param string $key The API key.
+     * @param bool $jsonmode Whether to request structured JSON output.
+     * @param bool $personal True for the personal group of keys.
+     * @param int $userid User whose personal endpoint and model are read in the personal group.
+     * @return array HTTP result array.
+     */
+    protected function call_openai_for_tier(
+        string $system,
+        string $user,
+        string $key,
+        bool $jsonmode,
+        bool $personal,
+        int $userid
+    ): array {
+        if ($personal) {
+            $rawurl = keys::get_personal_openai_url($userid);
+            if ($rawurl === '') {
+                $rawurl = keys::get_openai_baseurl();
+            }
+            $model = keys::get_personal_openai_model($userid);
+            if ($model === '') {
+                $model = keys::get_openai_model();
+            }
+        } else {
+            $rawurl = keys::get_openai_baseurl();
+            $model = keys::get_openai_model();
+        }
+
+        $openaiurl = $this->resolve_openai_url($rawurl);
+        $addresses = $this->safe_addresses($openaiurl);
+        if ($addresses === []) {
+            return [
+                'success' => false,
+                'provider' => 'OpenAI',
+                'model' => $model,
+                'message' => 'OpenAI: ' . get_string('endpointblocked', 'local_aihub'),
+            ];
+        }
+
+        return $this->call_openai_compatible(
+            $system,
+            $user,
+            $key,
+            $openaiurl,
+            $model,
+            $jsonmode,
+            $this->pin_to($openaiurl, $addresses)
+        );
     }
 
     /**
@@ -562,7 +599,9 @@ class client {
      * @param array $headers Array of header strings.
      * @param string $source Display name of the AI provider (for error messages).
      * @param string[] $resolve CURLOPT_RESOLVE entries pinning the host to validated addresses.
-     * @return array Keys: success (bool), data (string) on success, provider (string), message (string) on failure.
+     * @return array Keys: success (bool), data (string) on success, provider (string); on failure also message (string),
+     *               status (int, the HTTP status, 0 when there was no HTTP answer) and remember (bool, whether the
+     *               failure is the provider's own and worth remembering: see health).
      */
     protected function http_post(string $url, string $payload, array $headers, string $source, array $resolve = []): array {
         $curl = $this->make_curl();
@@ -585,7 +624,13 @@ class client {
         $code = isset($info['http_code']) ? (int) $info['http_code'] : 0;
 
         if ($curl->get_errno()) {
-            return ['success' => false, 'message' => $source . ': ' . $curl->error, 'provider' => $source];
+            return [
+                'success' => false,
+                'message' => $source . ': ' . $curl->error,
+                'provider' => $source,
+                'status' => 0,
+                'remember' => true,
+            ];
         }
 
         if ($code !== 200) {
@@ -593,7 +638,13 @@ class client {
             $extra = isset($decoded['error']['message'])
                 ? $decoded['error']['message']
                 : 'HTTP ' . $code;
-            return ['success' => false, 'message' => $source . ': ' . $extra, 'provider' => $source];
+            return [
+                'success' => false,
+                'message' => $source . ': ' . $extra,
+                'provider' => $source,
+                'status' => $code,
+                'remember' => self::is_provider_failure($code),
+            ];
         }
 
         $decoded = json_decode($response, true);
@@ -611,10 +662,32 @@ class client {
                 ? get_string('emptyresponsewhy', 'local_aihub', $reason)
                 : get_string('emptyresponse', 'local_aihub');
 
-            return ['success' => false, 'message' => $source . ': ' . $text, 'provider' => $source];
+            // The provider answered; what it refused or cut short depends on this request, so it is not remembered.
+            return [
+                'success' => false,
+                'message' => $source . ': ' . $text,
+                'provider' => $source,
+                'status' => $code,
+                'remember' => false,
+            ];
         }
 
         return ['success' => true, 'data' => $content, 'provider' => $source];
+    }
+
+    /**
+     * Tells whether an HTTP status is the provider's own failure, as opposed to a problem with the request.
+     *
+     * A provider that is down (5xx), over its quota (429) or that refuses the key or the endpoint (401,
+     * 403, 404) will fail the next request too, until it recovers or the settings change. The other client
+     * errors (400, 413, 422...) say the request was wrong, which tells nothing about the provider: Groq
+     * answers 413 to a prompt that is too large and is fine for every other one.
+     *
+     * @param int $status The HTTP status of the failed request.
+     * @return bool
+     */
+    protected static function is_provider_failure(int $status): bool {
+        return $status >= 500 || $status === 429 || in_array($status, [401, 403, 404], true);
     }
 
     /**

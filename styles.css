@@ -28,3 +28,15 @@
 .path-local-aihub .local-aihub-mykeys details > summary {
     cursor: pointer;
 }
+
+.path-local-aihub .local-aihub-providerorder {
+    max-width: 24rem;
+}
+
+.path-local-aihub .local-aihub-providerorder .aihub-handle {
+    margin-inline-end: 1rem;
+}
+
+.path-local-aihub .local-aihub-providerorder .badge {
+    margin-inline-start: 0.5rem;
+}

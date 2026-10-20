@@ -47,6 +47,15 @@ class behat_local_aihub extends behat_base {
     }
 
     /**
+     * Opens the administrator's page for the order the AI providers are tried in.
+     *
+     * @Given I am on the AI provider order page
+     */
+    public function i_am_on_the_ai_provider_order_page(): void {
+        $this->getSession()->visit($this->locate_path('/local/aihub/providerorder.php'));
+    }
+
+    /**
      * Opens the site-wide AI usage report.
      *
      * @Given I am on the site AI usage report page

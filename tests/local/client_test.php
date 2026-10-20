@@ -861,4 +861,405 @@ final class client_test extends \advanced_testcase {
         $this->assertNotSame('', $client->endpoint_problem('https://exa mple.com/v1'));
         $this->assertSame('', $client->endpoint_problem('https://8.8.8.8/v1'));
     }
+
+    /**
+     * Forgets every remembered failure, so a test starts from a clean memory.
+     *
+     * @return void
+     */
+    private function forget_failures(): void {
+        \cache::make('local_aihub', 'providerhealth')->purge();
+    }
+
+    /**
+     * A result a provider gives when it fails for a reason of its own.
+     *
+     * @param string $provider The provider's display name.
+     * @return array
+     */
+    private function provider_failure(string $provider): array {
+        return [
+            'success' => false,
+            'message' => $provider . ': down',
+            'provider' => $provider,
+            'status' => 503,
+            'remember' => true,
+        ];
+    }
+
+    /**
+     * A result a provider gives when it answers.
+     *
+     * @param string $provider The provider's display name.
+     * @return array
+     */
+    private function provider_success(string $provider): array {
+        return ['success' => true, 'data' => 'ok', 'provider' => $provider, 'model' => 'm'];
+    }
+
+    /**
+     * The request after a provider failed does not wait for it: it is tried last, so the one that
+     * answers first is the only one asked. This is the case that made every chat question wait for a
+     * Gemini that was timing out.
+     *
+     * @return void
+     */
+    public function test_a_provider_that_failed_is_tried_last_on_the_next_request(): void {
+        $this->resetAfterTest();
+        $this->forget_failures();
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+
+        $client = new mock_client();
+        $client->results['Gemini'] = $this->provider_failure('Gemini');
+        $client->results['Groq'] = $this->provider_success('Groq');
+
+        $client->generate_text('', 'first');
+        $this->assertSame(['Gemini', 'Groq'], $client->calls, 'the first request pays for the failure');
+
+        $client->calls = [];
+        $result = $client->generate_text('', 'second');
+
+        $this->assertTrue($result['success']);
+        $this->assertSame(['Groq'], $client->calls, 'the second request goes straight to the provider that works');
+        $this->assertCount(1, $result['attempts'], 'a provider that was not called leaves no attempt behind');
+    }
+
+    /**
+     * Once the window has passed the provider is tried in its normal place again.
+     *
+     * @return void
+     */
+    public function test_a_provider_is_tried_first_again_after_the_window(): void {
+        $this->resetAfterTest();
+        $this->forget_failures();
+        set_config('failurememory', 5, 'local_aihub');
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+        health::mark_failed(health::TIER_SITE, keys::PROVIDER_GEMINI, 0, time() - 10 * MINSECS);
+
+        $client = new mock_client();
+        $client->results['Gemini'] = $this->provider_success('Gemini');
+
+        $client->generate_text('', 'hello');
+
+        $this->assertSame(['Gemini'], $client->calls);
+    }
+
+    /**
+     * With every provider failing, all of them are still asked: the memory only changes the order.
+     * A request must never fail because of what happened to the previous one.
+     *
+     * @return void
+     */
+    public function test_every_provider_is_still_asked_when_all_of_them_failed_recently(): void {
+        $this->resetAfterTest();
+        $this->forget_failures();
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+
+        $client = new mock_client();
+        $client->results['Gemini'] = $this->provider_failure('Gemini');
+        $client->results['Groq'] = $this->provider_failure('Groq');
+        $client->generate_text('', 'first');
+
+        $client->calls = [];
+        $client->results['Groq'] = $this->provider_success('Groq');
+        $result = $client->generate_text('', 'second');
+
+        $this->assertSame(['Gemini', 'Groq'], $client->calls);
+        $this->assertTrue($result['success'], 'the provider that recovered still serves the request');
+    }
+
+    /**
+     * A failure that depends on the request says nothing about the provider, so it is not remembered.
+     *
+     * @return void
+     */
+    public function test_a_failure_that_depends_on_the_request_is_not_remembered(): void {
+        $this->resetAfterTest();
+        $this->forget_failures();
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+
+        $client = new mock_client();
+        $client->results['Gemini'] = [
+            'success' => false, 'message' => 'Gemini: too large', 'provider' => 'Gemini', 'status' => 413, 'remember' => false,
+        ];
+        $client->results['Groq'] = $this->provider_success('Groq');
+        $client->generate_text('', 'first');
+
+        $client->calls = [];
+        $client->generate_text('', 'second');
+
+        $this->assertSame(['Gemini', 'Groq'], $client->calls, 'Gemini is still tried first');
+        $this->assertFalse(health::is_demoted(health::TIER_SITE, keys::PROVIDER_GEMINI, 0));
+    }
+
+    /**
+     * A provider that answers is forgiven on the spot.
+     *
+     * @return void
+     */
+    public function test_an_answer_clears_the_failure(): void {
+        $this->resetAfterTest();
+        $this->forget_failures();
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+        health::mark_failed(health::TIER_SITE, keys::PROVIDER_GEMINI, 0);
+
+        $client = new mock_client();
+        // Groq goes first because Gemini failed, and fails without it being the provider's fault.
+        $client->results['Groq'] = [
+            'success' => false,
+            'message' => 'Groq: refused',
+            'provider' => 'Groq',
+            'remember' => false,
+        ];
+        $client->results['Gemini'] = $this->provider_success('Gemini');
+
+        $client->generate_text('', 'hello');
+
+        $this->assertSame(['Groq', 'Gemini'], $client->calls);
+        $this->assertFalse(health::is_demoted(health::TIER_SITE, keys::PROVIDER_GEMINI, 0));
+    }
+
+    /**
+     * A user's personal keys and the site's are remembered apart: a failure with one user's own key
+     * is that user's alone, and says nothing about the site's keys or about anyone else.
+     *
+     * @return void
+     */
+    public function test_a_personal_failure_is_remembered_for_that_user_only(): void {
+        $this->resetAfterTest();
+        $this->forget_failures();
+        set_config('enablepersonalkeys', 1, 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+        $course = $this->getDataGenerator()->create_course();
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+        $colleague = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+        keys::save_user_key(keys::PROVIDER_GEMINI, 'personal-gemini', (int) $teacher->id);
+
+        $client = new mock_client();
+        $client->results['Gemini'] = $this->provider_failure('Gemini');
+        $client->results['Groq'] = $this->provider_success('Groq');
+        $result = $client->generate_text('', 'hello', false, (int) $teacher->id);
+
+        $this->assertSame(['Gemini', 'Groq'], $client->calls);
+        $this->assertSame('site', $result['keysource']);
+        $this->assertTrue(health::is_demoted(health::TIER_PERSONAL, keys::PROVIDER_GEMINI, (int) $teacher->id));
+        $this->assertFalse(health::is_demoted(health::TIER_PERSONAL, keys::PROVIDER_GEMINI, (int) $colleague->id));
+        $this->assertFalse(health::is_demoted(health::TIER_SITE, keys::PROVIDER_GEMINI, 0));
+        $this->assertFalse(health::is_demoted(health::TIER_SITE, keys::PROVIDER_GROQ, 0));
+    }
+
+    /**
+     * The failure of the site's keys is shared by every user.
+     *
+     * @return void
+     */
+    public function test_a_site_failure_is_shared_by_every_user(): void {
+        $this->resetAfterTest();
+        $this->forget_failures();
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+        $first = $this->getDataGenerator()->create_user();
+        $second = $this->getDataGenerator()->create_user();
+
+        $client = new mock_client();
+        $client->results['Gemini'] = $this->provider_failure('Gemini');
+        $client->results['Groq'] = $this->provider_success('Groq');
+        $client->generate_text('', 'hello', false, (int) $first->id);
+
+        $client->calls = [];
+        $client->generate_text('', 'hello', false, (int) $second->id);
+
+        $this->assertSame(['Groq'], $client->calls, 'the second user does not wait for what the first one found out');
+    }
+
+    /**
+     * Turning the memory off restores the fixed order: every request starts from the same provider.
+     *
+     * @return void
+     */
+    public function test_with_the_memory_off_every_request_starts_from_the_first_provider(): void {
+        $this->resetAfterTest();
+        $this->forget_failures();
+        set_config('failurememory', 0, 'local_aihub');
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+
+        $client = new mock_client();
+        $client->results['Gemini'] = $this->provider_failure('Gemini');
+        $client->results['Groq'] = $this->provider_success('Groq');
+        $client->generate_text('', 'first');
+
+        $client->calls = [];
+        $client->generate_text('', 'second');
+
+        $this->assertSame(['Gemini', 'Groq'], $client->calls);
+    }
+
+    /**
+     * The site's order decides which provider is asked first, and the others stay as the backup.
+     *
+     * @return void
+     */
+    public function test_the_provider_the_site_puts_first_is_asked_first(): void {
+        $this->resetAfterTest();
+        $this->forget_failures();
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+        keys::save_site_provider_order([keys::PROVIDER_GROQ]);
+
+        $client = new mock_client();
+        $client->results['Groq'] = $this->provider_success('Groq');
+        $client->generate_text('', 'hello');
+        $this->assertSame(['Groq'], $client->calls);
+
+        $client->calls = [];
+        $client->results['Groq'] = $this->provider_failure('Groq');
+        $client->results['Gemini'] = $this->provider_success('Gemini');
+        $this->forget_failures();
+        $client->generate_text('', 'hello');
+        $this->assertSame(['Groq', 'Gemini'], $client->calls, 'the others follow as the backup');
+    }
+
+    /**
+     * A user's own order goes ahead of the site's, and only for that user.
+     *
+     * @return void
+     */
+    public function test_a_users_own_order_is_followed_for_that_user_only(): void {
+        $this->resetAfterTest();
+        $this->forget_failures();
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        set_config('groq_key', 'site-groq', 'local_aihub');
+        set_config('deepseek_key', 'site-deepseek', 'local_aihub');
+        keys::save_site_provider_order([keys::PROVIDER_GROQ]);
+        $chooser = $this->getDataGenerator()->create_user();
+        $other = $this->getDataGenerator()->create_user();
+        keys::save_user_provider_order([keys::PROVIDER_DEEPSEEK], (int) $chooser->id);
+
+        $client = new mock_client();
+        $client->results['DeepSeek'] = $this->provider_success('DeepSeek');
+        $client->results['Groq'] = $this->provider_success('Groq');
+
+        $client->generate_text('', 'hello', false, (int) $chooser->id);
+        $this->assertSame(['DeepSeek'], $client->calls);
+
+        $client->calls = [];
+        $client->generate_text('', 'hello', false, (int) $other->id);
+        $this->assertSame(['Groq'], $client->calls, 'the other user follows the site default');
+    }
+
+    /**
+     * The whole order is followed, not only the provider at the front: with the site's order reversed
+     * and the first providers failing, the requests go down the list in that order.
+     *
+     * @return void
+     */
+    public function test_the_whole_order_is_followed_when_the_first_providers_fail(): void {
+        $this->resetAfterTest();
+        $this->forget_failures();
+        foreach (['gemini', 'groq', 'deepseek'] as $provider) {
+            set_config($provider . '_key', 'site-' . $provider, 'local_aihub');
+        }
+        keys::save_site_provider_order([keys::PROVIDER_DEEPSEEK, keys::PROVIDER_GROQ, keys::PROVIDER_GEMINI]);
+
+        $client = new mock_client();
+        $client->results['DeepSeek'] = ['success' => false, 'message' => 'DeepSeek: refused', 'provider' => 'DeepSeek'];
+        $client->results['Groq'] = ['success' => false, 'message' => 'Groq: refused', 'provider' => 'Groq'];
+        $client->results['Gemini'] = $this->provider_success('Gemini');
+
+        $result = $client->generate_text('', 'hello');
+
+        $this->assertSame(['DeepSeek', 'Groq', 'Gemini'], $client->calls);
+        $this->assertTrue($result['success']);
+    }
+
+    /**
+     * The order arranges the providers inside a group of keys; it does not move the personal keys
+     * behind the site's. A personal key is still tried first, whatever order the user chose.
+     *
+     * @return void
+     */
+    public function test_the_order_never_puts_the_site_keys_ahead_of_the_personal_ones(): void {
+        $this->resetAfterTest();
+        $this->forget_failures();
+        set_config('enablepersonalkeys', 1, 'local_aihub');
+        set_config('gemini_key', 'site-gemini', 'local_aihub');
+        $course = $this->getDataGenerator()->create_course();
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+        keys::save_user_key(keys::PROVIDER_GROQ, 'personal-groq', (int) $teacher->id);
+        keys::save_user_provider_order([keys::PROVIDER_GEMINI], (int) $teacher->id);
+
+        $client = new mock_client();
+        $client->results['Groq'] = $this->provider_success('Groq');
+        $client->results['Gemini'] = $this->provider_success('Gemini');
+
+        $result = $client->generate_text('', 'hello', false, (int) $teacher->id);
+
+        $this->assertSame(['Groq'], $client->calls, 'the personal Groq key is tried before the site Gemini key');
+        $this->assertSame('personal', $result['keysource']);
+    }
+
+    /**
+     * Which statuses are the provider's own failure: down, over quota, or refusing the key or the
+     * endpoint. The rest say the request was wrong.
+     *
+     * @return void
+     */
+    public function test_which_http_failures_are_remembered(): void {
+        $client = new stub_transport_client();
+        $client->curl->body = json_encode(['error' => ['message' => 'nope']]);
+
+        foreach ([500, 502, 503, 504, 429, 401, 403, 404] as $status) {
+            $client->curl->code = $status;
+            $result = $client->post_for_testing('https://x', '{}', [], 'Gemini');
+            $this->assertFalse($result['success']);
+            $this->assertSame($status, $result['status']);
+            $this->assertTrue($result['remember'], $status . ' is the provider\'s own failure');
+        }
+
+        foreach ([400, 405, 408, 413, 415, 422] as $status) {
+            $client->curl->code = $status;
+            $result = $client->post_for_testing('https://x', '{}', [], 'Groq');
+            $this->assertFalse($result['success']);
+            $this->assertSame($status, $result['status']);
+            $this->assertFalse($result['remember'], $status . ' depends on the request');
+        }
+    }
+
+    /**
+     * A request that never got an answer is the provider's failure, with no HTTP status to report.
+     *
+     * @return void
+     */
+    public function test_a_timeout_is_remembered(): void {
+        $client = new stub_transport_client();
+        $client->curl->fail_transport(28, 'Operation timed out after 30002 milliseconds with 0 bytes received');
+
+        $result = $client->post_for_testing('https://x', '{}', [], 'Gemini');
+
+        $this->assertFalse($result['success']);
+        $this->assertSame(0, $result['status']);
+        $this->assertTrue($result['remember']);
+    }
+
+    /**
+     * A 200 with nothing to read depends on the prompt (blocked, cut short), so it is not remembered.
+     *
+     * @return void
+     */
+    public function test_an_answer_without_text_is_not_remembered(): void {
+        $client = new stub_transport_client();
+        $client->curl->body = json_encode(['promptFeedback' => ['blockReason' => 'SAFETY']]);
+
+        $result = $client->post_for_testing('https://x', '{}', [], 'Gemini');
+
+        $this->assertFalse($result['success']);
+        $this->assertSame(200, $result['status']);
+        $this->assertFalse($result['remember']);
+    }
 }

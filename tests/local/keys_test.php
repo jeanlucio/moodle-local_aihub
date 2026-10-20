@@ -292,4 +292,192 @@ final class keys_test extends \advanced_testcase {
 
         $this->assertSame(100, \core_text::strlen(keys::get_personal_openai_model((int) $user->id)));
     }
+
+    /**
+     * With nothing chosen anywhere the order is the built-in one, which is what the hub did
+     * before the order could be changed.
+     *
+     * @return void
+     */
+    public function test_provider_order_is_the_built_in_one_by_default(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        $this->assertSame(
+            [keys::PROVIDER_GEMINI, keys::PROVIDER_GROQ, keys::PROVIDER_DEEPSEEK, keys::PROVIDER_OPENAI],
+            keys::provider_order((int) $user->id)
+        );
+        $this->assertSame(keys::providers(), keys::provider_order((int) $user->id));
+    }
+
+    /**
+     * The site's order goes first, in the order the administrator gave, and what is left of the
+     * built-in order follows.
+     *
+     * @return void
+     */
+    public function test_provider_order_follows_the_site_order(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        keys::save_site_provider_order([keys::PROVIDER_OPENAI, keys::PROVIDER_GROQ]);
+
+        $this->assertSame(
+            [keys::PROVIDER_OPENAI, keys::PROVIDER_GROQ, keys::PROVIDER_GEMINI, keys::PROVIDER_DEEPSEEK],
+            keys::provider_order((int) $user->id)
+        );
+    }
+
+    /**
+     * Every provider can be moved, not just the first one: a provider put last stays last.
+     *
+     * @return void
+     */
+    public function test_provider_order_can_put_any_provider_anywhere(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $order = [keys::PROVIDER_DEEPSEEK, keys::PROVIDER_OPENAI, keys::PROVIDER_GROQ, keys::PROVIDER_GEMINI];
+
+        keys::save_site_provider_order($order);
+
+        $this->assertSame($order, keys::provider_order((int) $user->id));
+    }
+
+    /**
+     * The user's own order goes ahead of the site's, and the site's fills in what the user left out.
+     * Someone who chose nothing follows the site.
+     *
+     * @return void
+     */
+    public function test_provider_order_puts_the_users_order_ahead_of_the_sites(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $other = $this->getDataGenerator()->create_user();
+
+        keys::save_site_provider_order([keys::PROVIDER_GROQ, keys::PROVIDER_GEMINI, keys::PROVIDER_DEEPSEEK]);
+        keys::save_user_provider_order([keys::PROVIDER_DEEPSEEK], (int) $user->id);
+
+        $this->assertSame(
+            [keys::PROVIDER_DEEPSEEK, keys::PROVIDER_GROQ, keys::PROVIDER_GEMINI, keys::PROVIDER_OPENAI],
+            keys::provider_order((int) $user->id)
+        );
+        $this->assertSame(
+            [keys::PROVIDER_GROQ, keys::PROVIDER_GEMINI, keys::PROVIDER_DEEPSEEK, keys::PROVIDER_OPENAI],
+            keys::provider_order((int) $other->id)
+        );
+    }
+
+    /**
+     * A provider listed twice, or in both the user's order and the site's, appears once, in its
+     * first place.
+     *
+     * @return void
+     */
+    public function test_provider_order_has_no_repeated_provider(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        keys::save_site_provider_order([keys::PROVIDER_GROQ, keys::PROVIDER_OPENAI]);
+        keys::save_user_provider_order([keys::PROVIDER_GROQ, keys::PROVIDER_GROQ, keys::PROVIDER_GEMINI], (int) $user->id);
+
+        $order = keys::provider_order((int) $user->id);
+
+        $this->assertSame($order, array_values(array_unique($order)));
+        $this->assertSame(
+            [keys::PROVIDER_GROQ, keys::PROVIDER_GEMINI, keys::PROVIDER_OPENAI, keys::PROVIDER_DEEPSEEK],
+            $order
+        );
+    }
+
+    /**
+     * A value that is not a provider is ignored, so a stale setting or preference cannot take a
+     * provider out of the list or put a made-up one in it.
+     *
+     * @return void
+     */
+    public function test_provider_order_ignores_unknown_values(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+
+        set_config('providerorder', 'not-a-provider,,  ,groq', 'local_aihub');
+        set_user_preference('local_aihub_providerorder', 'also-not-one,<script>', (int) $user->id);
+
+        $this->assertSame(
+            [keys::PROVIDER_GROQ, keys::PROVIDER_GEMINI, keys::PROVIDER_DEEPSEEK, keys::PROVIDER_OPENAI],
+            keys::provider_order((int) $user->id)
+        );
+    }
+
+    /**
+     * The text a form sends, or the list a caller builds, is reduced to the known providers once each.
+     *
+     * @return void
+     */
+    public function test_normalize_order(): void {
+        $this->assertSame([], keys::normalize_order(''));
+        $this->assertSame([], keys::normalize_order('nothing,else'));
+        $this->assertSame(['groq', 'gemini'], keys::normalize_order(' groq , gemini ,groq'));
+        $this->assertSame(['openai', 'deepseek'], keys::normalize_order(['openai', 'x', 'deepseek', 'openai']));
+        $this->assertSame(['gemini'], keys::normalize_order('GEMINI,gemini'), 'the names are case sensitive');
+    }
+
+    /**
+     * A user's order is stored as the list given, read back the same, and cleared by an empty list
+     * or one with nothing valid in it, which is "automatic".
+     *
+     * @return void
+     */
+    public function test_a_users_order_is_saved_and_cleared(): void {
+        $this->resetAfterTest();
+        $user = $this->getDataGenerator()->create_user();
+        $userid = (int) $user->id;
+
+        $this->assertSame([], keys::get_user_provider_order($userid));
+
+        keys::save_user_provider_order('deepseek,groq,openai,gemini', $userid);
+        $this->assertSame(['deepseek', 'groq', 'openai', 'gemini'], keys::get_user_provider_order($userid));
+        $this->assertSame('deepseek,groq,openai,gemini', get_user_preferences('local_aihub_providerorder', null, $userid));
+
+        keys::save_user_provider_order([], $userid);
+        $this->assertSame([], keys::get_user_provider_order($userid));
+        $this->assertNull(get_user_preferences('local_aihub_providerorder', null, $userid));
+
+        keys::save_user_provider_order('groq', $userid);
+        keys::save_user_provider_order('<script>,nope', $userid);
+        $this->assertNull(get_user_preferences('local_aihub_providerorder', null, $userid));
+    }
+
+    /**
+     * The site's order is saved the same way, and an empty one goes back to automatic.
+     *
+     * @return void
+     */
+    public function test_the_sites_order_is_saved_and_cleared(): void {
+        $this->resetAfterTest();
+
+        $this->assertSame([], keys::get_site_provider_order());
+
+        keys::save_site_provider_order('openai,gemini');
+        $this->assertSame(['openai', 'gemini'], keys::get_site_provider_order());
+
+        keys::save_site_provider_order('');
+        $this->assertSame([], keys::get_site_provider_order());
+        $this->assertSame(keys::providers(), keys::provider_order(0));
+    }
+
+    /**
+     * Without a user, as in cron, only the site's order applies.
+     *
+     * @return void
+     */
+    public function test_provider_order_without_a_user_uses_the_sites_order(): void {
+        $this->resetAfterTest();
+
+        keys::save_site_provider_order([keys::PROVIDER_DEEPSEEK]);
+
+        $this->assertSame(
+            [keys::PROVIDER_DEEPSEEK, keys::PROVIDER_GEMINI, keys::PROVIDER_GROQ, keys::PROVIDER_OPENAI],
+            keys::provider_order(0)
+        );
+    }
 }

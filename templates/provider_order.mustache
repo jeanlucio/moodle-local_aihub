@@ -1,0 +1,56 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_aihub/provider_order
+
+    A list of the AI providers that can be dragged into the order they are tried in, and the hidden
+    field that carries that order when the form is submitted. Shared by the user's page and the
+    administrator's.
+
+    Context variables required for this template:
+    * listid string Id of the list, used by the JavaScript module
+    * inputid string Id of the hidden field
+    * inputname string Name of the hidden field
+    * labelid string Id of the element that names the list; may be empty
+    * inputvalue string The order the person saved, comma separated; empty for automatic
+    * items array One entry per provider (name, label, movetitle, nokey, nokeylabel)
+
+    Example context (json):
+    {
+        "listid": "aihub-providerorder-list",
+        "inputid": "aihub-providerorder",
+        "inputname": "providerorder",
+        "labelid": "",
+        "inputvalue": "groq,gemini",
+        "items": [
+            {"name": "groq", "label": "Groq", "movetitle": "Move Groq", "nokey": false, "nokeylabel": "No site key"},
+            {"name": "gemini", "label": "Gemini", "movetitle": "Move Gemini", "nokey": true, "nokeylabel": "No site key"}
+        ]
+    }
+}}
+<ul class="list-group local-aihub-providerorder" id="{{listid}}" data-input="{{inputid}}"{{#labelid}} aria-labelledby="{{labelid}}"{{/labelid}}>
+    {{#items}}
+        <li class="list-group-item d-flex align-items-center" data-provider="{{name}}">
+            <span class="aihub-handle">{{>core/drag_handle}}</span>
+            <span class="fw-bold">{{label}}</span>
+            {{#nokey}}
+                <span class="badge bg-light text-dark border">{{nokeylabel}}</span>
+            {{/nokey}}
+        </li>
+    {{/items}}
+</ul>
+<input type="hidden" id="{{inputid}}" name="{{inputname}}" value="{{inputvalue}}">

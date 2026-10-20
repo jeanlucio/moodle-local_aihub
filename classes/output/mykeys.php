@@ -71,6 +71,7 @@ class mykeys implements renderable, templatable {
      */
     public function export_for_template(renderer_base $output): array {
         $logrows = $this->log_rows();
+        $chosen = keys::get_user_provider_order($this->userid);
         return [
             'intro'                => get_string('mykeys_intro', 'local_aihub'),
             'actionurl'            => (new moodle_url('/local/aihub/mykeys.php'))->out(false),
@@ -81,6 +82,20 @@ class mykeys implements renderable, templatable {
             'showhidelabel'        => get_string('mykeys_showhide', 'local_aihub'),
             'advancedlabel'        => get_string('mykeys_advanced', 'local_aihub'),
             'providers'            => $this->provider_rows(),
+            'orderlabel'           => get_string('mykeys_providerorder', 'local_aihub'),
+            'orderhelp'            => get_string('mykeys_providerorder_help', 'local_aihub'),
+            'orderstatus'          => $chosen === []
+                ? get_string('mykeys_providerorder_isauto', 'local_aihub')
+                : get_string('mykeys_providerorder_isown', 'local_aihub'),
+            'orderhasown'          => $chosen !== [],
+            'orderresetlabel'      => get_string('providerorder_reset', 'local_aihub'),
+            'providerorder'        => (new provider_order(
+                keys::provider_order($this->userid),
+                $chosen,
+                'providerorder',
+                false,
+                'aihub-providerorder-label'
+            ))->export_for_template($output),
             'openaiurl'            => keys::get_personal_openai_url($this->userid),
             'openaiurllabel'       => get_string('settings_openai_baseurl', 'local_aihub'),
             'openaiurlplaceholder' => keys::get_openai_baseurl(),
@@ -111,17 +126,26 @@ class mykeys implements renderable, templatable {
     }
 
     /**
-     * Builds the per-provider status rows (no key values are included).
+     * Returns the display name of each provider.
      *
-     * @return array[]
+     * @return array<string, string>
      */
-    private function provider_rows(): array {
-        $labels = [
+    private function provider_labels(): array {
+        return [
             keys::PROVIDER_GEMINI   => get_string('provider_gemini', 'local_aihub'),
             keys::PROVIDER_GROQ     => get_string('provider_groq', 'local_aihub'),
             keys::PROVIDER_DEEPSEEK => get_string('provider_deepseek', 'local_aihub'),
             keys::PROVIDER_OPENAI   => get_string('provider_openai', 'local_aihub'),
         ];
+    }
+
+    /**
+     * Builds the per-provider status rows (no key values are included).
+     *
+     * @return array[]
+     */
+    private function provider_rows(): array {
+        $labels = $this->provider_labels();
 
         $rows = [];
         foreach (keys::providers() as $provider) {
